@@ -1,0 +1,6 @@
+.env
+.venv/
+src/research/traces/
+.DS_Store
+**/.DS_Store
+__pycache__/

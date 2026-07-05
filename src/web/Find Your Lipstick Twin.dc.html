@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <title>Find Your Lipstick Twin</title>
+  <meta name="description" content="Found a lipstick you love? Find the closest color match at the best price across retailers.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💄</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;}
+    html,body{margin:0;padding:0;}
+    body{background:#F3E4DC;font-family:'Space Grotesk',sans-serif;color:#241019;-webkit-font-smoothing:antialiased;}
+    button{font-family:inherit;cursor:pointer;border:none;background:none;}
+    input{font-family:inherit;}
+    @keyframes scanline{0%{top:6%;}100%{top:88%;}}
+    @keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-9px);}}
+    @keyframes bob2{0%,100%{transform:translateY(-4px);}50%{transform:translateY(6px);}}
+    @keyframes pop{0%{transform:scale(.55);opacity:0;}60%{transform:scale(1.06);}100%{transform:scale(1);opacity:1;}}
+    @keyframes floaty{0%,100%{transform:translateY(0) rotate(var(--r,0deg));}50%{transform:translateY(-8px) rotate(var(--r,0deg));}}
+    @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.45;}}
+    @keyframes sweep{0%{background-position:-160% 0;}100%{background-position:260% 0;}}
+    @keyframes ringspin{to{transform:rotate(360deg);}}
+  </style>
+</helmet>
+<div style="min-height:100vh;display:flex;justify-content:center;background:radial-gradient(120% 80% at 50% 0%, #FBEFE8 0%, #F3E4DC 55%, #EAD6CC 100%);">
+  <div style="width:100%;max-width:468px;min-height:100vh;position:relative;display:flex;flex-direction:column;">
+
+    <!-- top bar -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 22px 10px;">
+      <button onClick="{{ onReset }}" title="Start over" style="display:flex;align-items:center;gap:8px;background:none;border:none;padding:0;" style-hover="opacity:.7;">
+        <span style="width:13px;height:13px;border-radius:50%;background:#FF2E7E;box-shadow:0 0 0 3px rgba(255,46,126,.18);"></span>
+        <span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:16px;letter-spacing:-.02em;color:#241019;">twin<span style="color:#FF2E7E;">.</span></span>
+      </button>
+      <span style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#A57E72;">color-matched dupes</span>
+    </div>
+
+    <!-- ============ LANDING ============ -->
+    <sc-if value="{{ isLanding }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;padding:8px 22px 30px;">
+      <div style="padding-top:14px;">
+        <button onClick="{{ onAbout }}" style="display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid #F0D9CF;border-radius:999px;padding:6px 13px;box-shadow:0 4px 14px rgba(120,60,40,.06);transition:border-color .14s ease,transform .14s ease;" style-hover="border-color:#FF2E7E;transform:translateY(-1px);">
+          <span style="width:7px;height:7px;border-radius:50%;background:#1FAE6B;animation:pulse 1.6s infinite;"></span>
+          <span style="font-family:'Space Mono',monospace;font-size:10.5px;letter-spacing:.05em;color:#6B4A3E;">how it works <span style="color:#FF2E7E;font-weight:700;">→</span></span>
+        </button>
+        <h1 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:50px;line-height:.96;letter-spacing:-.03em;margin:18px 0 0;color:#241019;">Find your<br>lipstick<br><span style="color:#FF2E7E;">twin.</span></h1>
+        <p style="font-size:15.5px;line-height:1.5;color:#6B4A3E;margin:18px 0 0;max-width:330px;text-wrap:pretty;">Drop the shade you're obsessed with. We find the lipsticks that are <i>perceptually identical</i> — then hunt down the lowest price for you.</p>
+      </div>
+
+      <!-- hero lipstick fan -->
+      <div style="position:relative;height:210px;display:flex;align-items:flex-end;justify-content:center;gap:2px;margin:8px 0;">
+        <div style="--r:-16deg;animation:floaty 4.2s ease-in-out infinite;transform:rotate(-16deg);"><dc-import name="Lipstick" color="#E0218A" hint-size="44px,118px"></dc-import></div>
+        <div style="--r:-8deg;animation:floaty 4.8s ease-in-out infinite .3s;transform:rotate(-8deg);margin-bottom:14px;"><dc-import name="Lipstick" color="#D7263D" hint-size="44px,118px"></dc-import></div>
+        <div style="--r:0deg;animation:floaty 4s ease-in-out infinite .15s;transform:translateY(-8px);z-index:2;"><dc-import name="Lipstick" color="#B06E5F" hint-size="44px,118px"></dc-import></div>
+        <div style="--r:9deg;animation:floaty 4.6s ease-in-out infinite .45s;transform:rotate(9deg);margin-bottom:12px;"><dc-import name="Lipstick" color="#9B1B4A" hint-size="44px,118px"></dc-import></div>
+        <div style="--r:17deg;animation:floaty 4.3s ease-in-out infinite .2s;transform:rotate(17deg);"><dc-import name="Lipstick" color="#7E3A8C" hint-size="44px,118px"></dc-import></div>
+      </div>
+
+      <button onClick="{{ onStart }}" style="width:100%;background:#3D1B31;color:#fff;border-radius:18px;padding:19px;font-size:16.5px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 12px 28px rgba(36,16,25,.22);" style-hover="background:#4E2440;">
+        Find my twin
+        <span style="font-size:18px;">→</span>
+      </button>
+    </div>
+    </sc-if>
+
+    <!-- ============ SEARCH ============ -->
+    <sc-if value="{{ isSearch }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;display:flex;flex-direction:column;padding:14px 22px 22px;">
+      <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:33px;line-height:1;letter-spacing:-.025em;margin:6px 0 6px;">What are you<br>wearing?</h2>
+      <p style="font-size:14px;line-height:1.45;color:#6B4A3E;margin:0 0 20px;max-width:300px;text-wrap:pretty;">Pick your brand, then the exact shade you love. We'll find its identical twins.</p>
+
+      <sc-if value="{{ hasError }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;gap:10px;background:#FDECEC;border:1.5px solid #F3B8B8;border-radius:14px;padding:12px 14px;margin-bottom:14px;">
+        <span style="font-size:16px;">⚠️</span>
+        <span style="font-size:13.5px;color:#8A2E2E;line-height:1.4;">{{ errorMsg }}</span>
+      </div>
+      </sc-if>
+
+      <!-- STEP 1 · brand -->
+      <sc-if value="{{ noBrand }}" hint-placeholder-val="{{ true }}">
+      <div style="font-family:'Space Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#6B4A3E;margin-bottom:9px;"><span style="color:#FF2E7E;">1/2</span> · the brand</div>
+      <div style="position:relative;">
+        <span style="position:absolute;left:18px;top:50%;transform:translateY(-50%);font-size:18px;color:#FF2E7E;">⌕</span>
+        <input value="{{ query }}" onChange="{{ onQuery }}" placeholder="e.g. MAC, Charlotte Tilbury…" autofocus="true" style="width:100%;background:#fff;border:2px solid #F0DDD3;border-radius:999px;padding:17px 18px 17px 48px;font-size:15.5px;color:#241019;outline:none;box-shadow:0 8px 22px rgba(120,60,40,.07);" style-focus="border-color:#FF2E7E;" />
+      </div>
+
+      <!-- brand autocomplete -->
+      <sc-if value="{{ showBrandList }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:10px;background:#fff;border:1px solid #F0DDD3;border-radius:16px;overflow:hidden;box-shadow:0 10px 26px rgba(120,60,40,.08);">
+        <sc-for list="{{ brandMatches }}" as="item" hint-placeholder-count="3">
+          <button onClick="{{ item.pick }}" style="width:100%;display:flex;align-items:center;gap:13px;padding:13px 15px;border-bottom:1px solid #F6EAE3;text-align:left;" style-hover="background:#FCF3EE;">
+            <span style="flex:1;min-width:0;">
+              <span style="display:block;font-size:15px;font-weight:600;color:#241019;text-transform:capitalize;">{{ item.name }}</span>
+              <span style="display:block;font-size:10.5px;color:#A57E72;font-family:'Space Mono',monospace;margin-top:2px;">{{ item.count }}</span>
+            </span>
+            <span style="display:flex;gap:3px;flex-shrink:0;">
+              <sc-for list="{{ item.swatches }}" as="sw" hint-placeholder-count="5">
+                <span style="width:16px;height:16px;border-radius:5px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);background:{{ sw }};"></span>
+              </sc-for>
+            </span>
+            <span style="font-size:18px;color:#D6B5A8;">→</span>
+          </button>
+        </sc-for>
+        <sc-if value="{{ noBrandMatches }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:16px;font-size:13.5px;color:#A57E72;text-align:center;">No brand match — try one below ↓</div>
+        </sc-if>
+      </div>
+      </sc-if>
+      </sc-if>
+
+      <!-- STEP 2 · shade -->
+      <sc-if value="{{ hasBrand }}" hint-placeholder-val="{{ false }}">
+      <div style="font-family:'Space Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#6B4A3E;margin-bottom:9px;"><span style="color:#FF2E7E;">2/2</span> · the shade</div>
+      <div style="display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid #F0DDD3;border-radius:999px;padding:10px 16px;margin-bottom:10px;box-shadow:0 4px 14px rgba(120,60,40,.05);">
+        <span style="font-family:'Space Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8A6255;background:#F6E9E2;border-radius:5px;padding:2.5px 6px;flex-shrink:0;">brand</span>
+        <span style="flex:1;min-width:0;font-size:14.5px;font-weight:600;color:#241019;text-transform:capitalize;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ brandName }}</span>
+        <button onClick="{{ onChangeBrand }}" style="flex-shrink:0;font-size:12.5px;color:#A57E72;text-decoration:underline;text-underline-offset:3px;">change</button>
+      </div>
+      <sc-if value="{{ shadeUnpicked }}" hint-placeholder-val="{{ true }}">
+      <div style="position:relative;">
+        <span style="position:absolute;left:18px;top:50%;transform:translateY(-50%);font-size:18px;color:#FF2E7E;">⌕</span>
+        <input value="{{ query }}" onChange="{{ onQuery }}" placeholder="e.g. Ruby Woo…" autofocus="true" style="width:100%;background:#fff;border:2px solid #F0DDD3;border-radius:999px;padding:17px 18px 17px 48px;font-size:15.5px;color:#241019;outline:none;box-shadow:0 8px 22px rgba(120,60,40,.07);" style-focus="border-color:#FF2E7E;" />
+      </div>
+      </sc-if>
+      <!-- once a shade is picked, the search bar settles into the same pill as the brand's -->
+      <sc-if value="{{ selected }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid #F0DDD3;border-radius:999px;padding:10px 16px;box-shadow:0 4px 14px rgba(120,60,40,.05);">
+        <span style="font-family:'Space Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8A6255;background:#F6E9E2;border-radius:5px;padding:2.5px 6px;flex-shrink:0;">shade</span>
+        <span style="flex:1;min-width:0;font-size:14.5px;font-weight:600;color:#241019;text-transform:capitalize;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ selShade }}</span>
+        <button onClick="{{ onChangeSel }}" style="flex-shrink:0;font-size:12.5px;color:#A57E72;text-decoration:underline;text-underline-offset:3px;">change</button>
+      </div>
+      </sc-if>
+
+      <!-- shade autocomplete -->
+      <sc-if value="{{ showShadeList }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:10px;background:#fff;border:1px solid #F0DDD3;border-radius:16px;overflow:hidden;box-shadow:0 10px 26px rgba(120,60,40,.08);">
+        <sc-for list="{{ matches }}" as="item" hint-placeholder-count="3">
+          <button onClick="{{ item.pick }}" style="width:100%;display:flex;align-items:center;gap:13px;padding:13px 15px;border-bottom:1px solid #F6EAE3;text-align:left;" style-hover="background:#FCF3EE;">
+            <span style="width:30px;height:30px;border-radius:9px;flex-shrink:0;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);background:{{ item.hex }};"></span>
+            <span style="flex:1;min-width:0;">
+              <span style="display:block;font-size:15px;font-weight:600;color:#241019;text-transform:capitalize;">{{ item.shade }}</span>
+              <span style="display:flex;align-items:center;gap:6px;margin-top:3px;min-width:0;">
+                <span style="font-family:'Space Mono',monospace;font-size:8.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8A6255;background:#F6E9E2;border-radius:5px;padding:2px 5px;flex-shrink:0;">product line</span>
+                <span style="font-size:11.5px;color:#A57E72;text-transform:capitalize;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ item.line }}</span>
+              </span>
+            </span>
+            <span style="font-size:18px;color:#D6B5A8;">→</span>
+          </button>
+        </sc-for>
+        <sc-if value="{{ noMatches }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:16px;font-size:13.5px;color:#A57E72;text-align:center;">No shade like that at <span style="text-transform:capitalize;">{{ brandName }}</span> — try another spelling</div>
+        </sc-if>
+      </div>
+      </sc-if>
+      </sc-if>
+
+      <div style="margin-top:22px;padding-top:0;">
+        <!-- staged selection + explicit run -->
+        <sc-if value="{{ selected }}" hint-placeholder-val="{{ false }}">
+          <div style="font-family:'Space Mono',monospace;font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#6B4A3E;margin-bottom:11px;">you'll match</div>
+          <div style="display:flex;align-items:center;gap:13px;background:#fff;border:1.5px solid #FFB7CE;border-radius:17px;padding:13px;box-shadow:0 8px 22px rgba(255,46,126,.1);">
+            <span style="display:{{ selImgDisp }};width:44px;height:44px;border-radius:12px;flex-shrink:0;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);background:{{ selImgBg }};"></span>
+            <span style="width:44px;height:44px;border-radius:12px;flex-shrink:0;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);background:{{ selHex }};"></span>
+            <div style="flex:1;min-width:0;">
+              <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#A57E72;">{{ selBrand }}</div>
+              <div style="font-size:15.5px;font-weight:600;">{{ selShade }}</div>
+            </div>
+            <button onClick="{{ onChangeSel }}" style="font-size:12.5px;color:#A57E72;text-decoration:underline;text-underline-offset:3px;">change</button>
+          </div>
+
+          <!-- format preference -->
+          <div style="margin-top:13px;background:#fff;border:1.5px solid #F0DDD3;border-radius:16px;padding:14px;">
+            <div style="font-size:13.5px;color:#3A2A2E;line-height:1.4;margin-bottom:11px;">This one's a <b style="font-weight:700;color:#241019;">{{ selFormat }}</b>. Open to twins in other formats?</div>
+            <div style="display:flex;gap:5px;background:#F6E9E2;border-radius:13px;padding:4px;">
+              <button onClick="{{ onFormatAny }}" style="flex:1;border:none;border-radius:10px;padding:11px 8px;font-size:13px;font-weight:600;cursor:pointer;background:{{ anyBg }};color:{{ anyFg }};box-shadow:{{ anyShadow }};transition:all .15s ease;">Any format ✨</button>
+              <button onClick="{{ onFormatSame }}" style="flex:1;border:none;border-radius:10px;padding:11px 8px;font-size:13px;font-weight:600;cursor:pointer;background:{{ sameBg }};color:{{ sameFg }};box-shadow:{{ sameShadow }};transition:all .15s ease;">{{ selFormat }} only</button>
+            </div>
+          </div>
+
+          <button onClick="{{ onFindTwin }}" style="margin-top:13px;width:100%;background:#3D1B31;color:#fff;border-radius:18px;padding:18px;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 12px 28px rgba(36,16,25,.22);" style-hover="background:#4E2440;">
+            Find my twin <span style="font-size:18px;">→</span>
+          </button>
+          <div style="text-align:center;font-family:'Space Mono',monospace;font-size:11px;color:#6B4A3E;margin-top:10px;">our agent checks real store pages — takes a minute or two</div>
+        </sc-if>
+        <!-- example chips (when nothing staged) -->
+        <sc-if value="{{ showChips }}" hint-placeholder-val="{{ true }}">
+          <div style="font-family:'Space Mono',monospace;font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#6B4A3E;margin-bottom:12px;">popular</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;">
+            <sc-for list="{{ examples }}" as="item" hint-placeholder-count="7">
+              <button onClick="{{ item.pick }}" style="display:flex;align-items:center;gap:8px;background:#fff;border:2px solid #F0DDD3;border-radius:999px;padding:8px 13px 8px 8px;transition:transform .14s ease,border-color .14s ease;" style-hover="border-color:#FF2E7E;transform:translateY(-2px);">
+                <span style="position:relative;width:16px;height:27px;flex-shrink:0;background:linear-gradient(112deg, rgba(255,255,255,.55), rgba(255,255,255,0) 40%, rgba(0,0,0,.22)), {{ item.hex }};clip-path:polygon(0% 28%, 100% 0%, 100% 100%, 0% 100%);border-radius:0 0 4px 4px;"></span>
+                <span style="font-size:13px;color:#6B4A3E;white-space:nowrap;"><span style="font-weight:700;">{{ item.brandLabel }}</span> · {{ item.shadeLabel }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ AGENT ============ -->
+    <sc-if value="{{ isAgent }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 22px 36px;text-align:center;">
+
+      <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#A57E72;margin-bottom:8px;">searching for the twin</div>
+
+      <!-- twin scan scene -->
+      <div style="position:relative;display:flex;align-items:flex-end;justify-content:center;gap:30px;padding:30px 26px;margin:6px 0 26px;background:#fff;border:1px solid #F0DDD3;border-radius:26px;box-shadow:0 16px 40px rgba(120,60,40,.1);overflow:hidden;">
+        <!-- scanning line -->
+        <div style="position:absolute;left:8%;right:8%;height:3px;border-radius:3px;background:linear-gradient(90deg, rgba(255,46,126,0), #FF2E7E, rgba(255,46,126,0));box-shadow:0 0 14px 3px rgba(255,46,126,.5);animation:scanline 1.5s ease-in-out infinite alternate;"></div>
+        <!-- the original -->
+        <div style="position:relative;animation:bob 3s ease-in-out infinite;">
+          <dc-import name="Lipstick" color="{{ anchorHex }}" hint-size="44px,118px"></dc-import>
+          <div style="position:absolute;-top:0;top:-22px;left:50%;transform:translateX(-50%);font-family:'Space Mono',monospace;font-size:9.5px;letter-spacing:.1em;color:#A57E72;white-space:nowrap;">YOURS</div>
+        </div>
+        <!-- equals -->
+        <div style="position:relative;align-self:center;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:26px;color:#FF2E7E;animation:pulse 1.2s infinite;">=</div>
+        <!-- the twin (revealing) -->
+        <div style="position:relative;animation:bob2 3s ease-in-out infinite;">
+          <div style="animation:pop .6s ease-out both;transform:scaleX(-1);">
+            <dc-import name="Lipstick" color="{{ anchorHex }}" hint-size="44px,118px"></dc-import>
+          </div>
+          <div style="position:absolute;top:-22px;left:50%;transform:translateX(-50%);font-family:'Space Mono',monospace;font-size:9.5px;letter-spacing:.1em;color:#FF2E7E;white-space:nowrap;">TWIN</div>
+        </div>
+      </div>
+
+      <!-- status -->
+      <div style="font-size:18px;font-weight:600;color:#241019;min-height:26px;">{{ agentLabel }}</div>
+      <div style="font-family:'Space Mono',monospace;font-size:12.5px;color:#6B4A3E;margin-top:8px;">{{ agentStepNum }} · {{ agentPctStr }}</div>
+
+      <!-- progress -->
+      <div style="width:100%;max-width:280px;height:7px;border-radius:7px;background:#EAD6CC;margin-top:14px;overflow:hidden;">
+        <div style="height:100%;border-radius:7px;background:linear-gradient(90deg,#FF2E7E,#FF7A4D);transition:width .5s ease;width:{{ agentPctStr }};"></div>
+      </div>
+      <div style="font-size:14px;color:#5C4237;margin-top:16px;max-width:310px;line-height:1.55;">Our agent runs a live Google search and reads real product pages.<br><b style="color:#241019;">This usually takes 1–2 minutes.</b></div>
+    </div>
+    </sc-if>
+
+    <!-- ============ RESULTS ============ -->
+    <sc-if value="{{ isResults }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;display:flex;flex-direction:column;padding:6px 18px 28px;">
+
+      <!-- your shade header (reference row) -->
+      <div style="display:flex;align-items:flex-start;gap:11px;padding:2px 4px;margin-bottom:13px;">
+        <span style="display:{{ anchorImgDisp }};width:30px;height:30px;border-radius:8px;flex-shrink:0;box-shadow:inset 0 0 0 1px rgba(0,0,0,.1);background:{{ anchorImgBg }};"></span>
+        <span style="width:30px;height:30px;border-radius:8px;flex-shrink:0;box-shadow:inset 0 0 0 1px rgba(0,0,0,.1);background:{{ anchorHex }};"></span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-family:'Space Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#A57E72;">your shade</div>
+          <div style="display:flex;align-items:baseline;flex-wrap:wrap;gap:6px;margin-top:2px;">
+            <span style="font-size:14px;font-weight:600;color:#3A2A2E;line-height:1.3;text-wrap:pretty;">{{ anchorBrand }} {{ anchorName }}</span>
+            <sc-if value="{{ anchorHasStatus }}" hint-placeholder-val="{{ false }}">
+              <span style="flex-shrink:0;font-family:'Space Mono',monospace;font-size:8.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#B7484F;background:#F8DDD4;border-radius:5px;padding:2px 6px;">{{ anchorStatus }}</span>
+            </sc-if>
+          </div>
+        </div>
+        <div style="flex-shrink:0;text-align:right;font-size:14px;font-weight:700;color:#3A2A2E;">{{ anchorPrice }} <span style="font-weight:400;font-size:10px;color:#A57E72;">{{ anchorPriceNote }}</span></div>
+      </div>
+
+      <!-- best deal banner removed: the cheapest twin is now marked in-list with a
+           pink #FF2E7E border + "cheapest twin" tag instead of a redundant hero card. -->
+
+      <!-- already-cheapest case: their shade wins (tappable for retailer prices) -->
+      <sc-if value="{{ noSavings }}" hint-placeholder-val="{{ false }}">
+      <button onClick="{{ onShade }}" style="display:block;width:100%;text-align:left;background:linear-gradient(120deg,#123420,#1F5A34);border-radius:20px;padding:18px;color:#fff;margin-bottom:26px;cursor:pointer;transition:transform .16s ease, box-shadow .16s ease;" style-hover="transform:scale(1.012);box-shadow:0 14px 30px rgba(18,52,32,.4);">
+        <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#A7E5BF;">good news</div>
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-top:8px;">
+          <div style="min-width:0;">
+            <div style="font-size:17px;font-weight:600;line-height:1.25;">You're already wearing the cheapest twin.</div>
+            <div style="font-size:12px;color:#C7E8D2;margin-top:7px;max-width:240px;line-height:1.45;text-wrap:pretty;">Nothing we found beats {{ anchorPrice }}. Every match below costs more.</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:30px;letter-spacing:-.02em;color:#7CF0A6;">{{ anchorPrice }}</div>
+            <div style="font-size:11px;color:#C7E8D2;margin-top:1px;">best price</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:13px;border-top:1px solid rgba(255,255,255,.14);padding-top:11px;font-family:'Space Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#7CF0A6;">see prices across retailers <span style="font-size:13px;">→</span></div>
+      </button>
+      </sc-if>
+
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:0 4px 12px;">
+        <div style="min-width:0;">
+          <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:16px;">Your closest matches</div>
+          <div style="font-size:11.5px;line-height:1.45;color:#8A7068;margin-top:3px;max-width:270px;text-wrap:pretty;">Each badge shows how close the shade sits to yours. We rank them on price.</div>
+        </div>
+        <label style="position:relative;display:inline-flex;align-items:center;flex-shrink:0;margin-top:2px;">
+          <select value="{{ sortBy }}" onChange="{{ onSort }}" style="font-family:'Space Mono',monospace;font-size:10.5px;color:#6B4A3E;background:#fff;border:1px solid #EAD3C8;border-radius:999px;padding:6px 26px 6px 12px;appearance:none;-webkit-appearance:none;cursor:pointer;outline:none;">
+            <option value="price">rank: price</option>
+            <option value="color">rank: color match</option>
+          </select>
+          <span style="position:absolute;right:11px;pointer-events:none;font-size:8px;color:#A57E72;">▼</span>
+        </label>
+      </div>
+
+      <!-- dupe cards -->
+      <div style="display:flex;flex-direction:column;gap:11px;">
+        <sc-for list="{{ dupes }}" as="item" hint-placeholder-count="5">
+          <button onClick="{{ item.open }}" style="position:relative;display:flex;align-items:center;gap:13px;background:#fff;border:{{ item.cardBorder }};border-radius:17px;padding:13px;text-align:left;box-shadow:0 4px 14px rgba(120,60,40,.05);overflow:hidden;opacity:{{ item.cardOpacity }};transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;" style-hover="border-color:#FFB7CE;transform:scale(1.025);box-shadow:0 12px 26px rgba(120,60,40,.13);">
+            <!-- split swatch: yours vs theirs -->
+            <span style="position:relative;width:46px;height:46px;border-radius:13px;flex-shrink:0;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);background:{{ item.hex }};">
+              <span style="position:absolute;top:0;left:0;width:0;height:0;border-style:solid;border-width:22px 22px 0 0;border-color:{{ anchorHex }} transparent transparent transparent;opacity:.92;"></span>
+            </span>
+            <span style="display:{{ item.imgDisp }};width:46px;height:46px;border-radius:13px;flex-shrink:0;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);background:{{ item.imgBg }};margin-left:-4px;"></span>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:14px;line-height:1.35;color:#241019;"><b style="font-weight:700;">{{ item.brand }}</b> <span style="font-weight:500;color:#6B4A3E;">{{ item.product }}</span></div>
+              <div style="display:flex;align-items:center;gap:7px;margin-top:4px;min-width:0;">
+                <span style="font-family:'Space Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8A6255;background:#F6E9E2;border-radius:5px;padding:2.5px 6px;flex-shrink:0;">shade</span>
+                <span style="font-size:14px;font-weight:700;color:#241019;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ item.shade }}</span>
+              </div>
+              <div style="margin-top:8px;display:flex;align-items:center;gap:8px;">
+                <div style="display:flex;gap:3px;">
+                  <sc-for list="{{ item.meter }}" as="sq" hint-placeholder-count="4">
+                    <span style="width:11px;height:11px;border-radius:3px;background:{{ sq }};"></span>
+                  </sc-for>
+                </div>
+                <span style="font-family:'Space Mono',monospace;font-size:10px;font-weight:700;color:{{ item.badgeFg }};">{{ item.badgeLabel }}</span>
+              </div>
+            </div>
+            <div style="text-align:right;flex-shrink:0;">
+              <div style="font-size:17px;font-weight:700;color:#241019;">{{ item.dealPriceStr }}</div>
+              <div style="font-size:11px;font-weight:600;color:{{ item.diffColor }};">{{ item.diffStr }}</div>
+              <sc-if value="{{ item.discontinued }}" hint-placeholder-val="{{ false }}">
+                <div style="font-family:'Space Mono',monospace;font-size:8.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#B7484F;margin-top:2px;">discontinued</div>
+              </sc-if>
+            </div>
+            <!-- Always display:flex; only value bindings (width/bg/text) change per
+                 item. The engine reliably follows value bindings on a permanent
+                 element across a reorder (same as cardBorder), but NOT show/hide
+                 toggles — so the tag stays bound to the cheapest card's data, not
+                 to its DOM position, in both price and color sort. Non-best cards
+                 collapse the bar to zero width so it's invisible. -->
+            <span style="align-self:stretch;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;box-sizing:border-box;width:{{ item.bestTagW }};background:{{ item.bestTagBg }};color:#fff;writing-mode:vertical-rl;font-family:'Space Mono',monospace;font-size:8.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;padding:{{ item.bestTagPad }};margin:{{ item.bestTagMargin }};">{{ item.bestTagText }}</span>
+          </button>
+        </sc-for>
+      </div>
+
+      <!-- download results as a text file -->
+      <div style="margin-top:22px;background:#fff;border:1px solid #F0DDD3;border-radius:18px;padding:16px 17px;box-shadow:0 4px 14px rgba(120,60,40,.05);">
+        <button onClick="{{ onDownload }}" style="width:100%;display:flex;align-items:center;gap:13px;background:none;border:none;padding:0;text-align:left;">
+          <span style="width:40px;height:40px;border-radius:12px;flex-shrink:0;background:#FFE9F1;color:#FF2E7E;display:flex;align-items:center;justify-content:center;font-size:19px;">⤓</span>
+          <span style="flex:1;min-width:0;">
+            <span style="display:block;font-size:15px;font-weight:600;color:#241019;">Download these results</span>
+            <span style="display:block;font-size:12.5px;color:#8A7068;margin-top:2px;">Every twin, price & store link in a .txt file</span>
+          </span>
+          <sc-if value="{{ downloaded }}" hint-placeholder-val="{{ false }}">
+            <span style="flex-shrink:0;font-family:'Space Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#147A4C;">saved ✓</span>
+          </sc-if>
+          <sc-if value="{{ notDownloaded }}" hint-placeholder-val="{{ true }}">
+            <span style="flex-shrink:0;font-size:19px;color:#D6B5A8;">→</span>
+          </sc-if>
+        </button>
+      </div>
+
+      <button onClick="{{ onSearchAgain }}" style="margin-top:18px;align-self:center;font-size:13.5px;color:#A57E72;text-decoration:underline;text-underline-offset:3px;">find another twin</button>
+    </div>
+    </sc-if>
+
+    <!-- ============ DETAIL ============ -->
+    <sc-if value="{{ isDetail }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;display:flex;flex-direction:column;padding:6px 22px 28px;">
+      <button onClick="{{ onBack }}" style="display:inline-flex;align-items:center;gap:7px;font-size:13.5px;color:#6B4A3E;margin-bottom:14px;align-self:flex-start;">← back to twin results</button>
+
+      <!-- swatch comparison (twin) -->
+      <sc-if value="{{ detailTwin }}" hint-placeholder-val="{{ true }}">
+      <div style="position:relative;display:flex;border-radius:22px;overflow:hidden;height:172px;box-shadow:0 12px 30px rgba(120,60,40,.12);">
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding:14px;background:{{ anchorHex }};">
+          <span style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;color:rgba(255,255,255,.8);">YOURS</span>
+          <span style="font-size:13px;font-weight:600;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.25);">{{ anchorPrice }}</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-end;text-align:right;padding:14px;background:{{ dupeHex }};">
+          <span style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;color:rgba(255,255,255,.8);">THE TWIN</span>
+          <span style="font-size:13px;font-weight:600;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.25);">{{ dupePrice }}</span>
+        </div>
+        <!-- center badge -->
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:999px;padding:9px 16px;box-shadow:0 6px 18px rgba(0,0,0,.18);text-align:center;">
+          <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:17px;color:#241019;letter-spacing:-.01em;">{{ dupeWord }}</div>
+          <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.06em;color:#A57E72;margin-top:2px;">{{ dupeDE }} · perceptual match</div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- single swatch (your own shade) -->
+      <sc-if value="{{ detailSelf }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;justify-content:flex-end;border-radius:22px;overflow:hidden;height:172px;box-shadow:0 12px 30px rgba(120,60,40,.12);padding:16px;background:{{ anchorHex }};">
+        <span style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;color:rgba(255,255,255,.85);">YOUR SHADE</span>
+        <span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:30px;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.3);letter-spacing:-.02em;">{{ anchorPrice }}</span>
+      </div>
+      </sc-if>
+
+      <div style="margin-top:16px;display:flex;align-items:center;gap:14px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:14px;font-weight:600;color:#6B4A3E;">{{ dupeLine }}</div>
+          <div style="display:flex;align-items:center;gap:9px;margin-top:4px;">
+            <span style="font-family:'Space Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8A6255;background:#F6E9E2;border-radius:5px;padding:2.5px 6px;flex-shrink:0;">shade</span>
+            <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:26px;letter-spacing:-.02em;margin:0;">{{ dupeName }}</h2>
+          </div>
+        </div>
+        <span style="display:{{ dupeImgDisp }};width:62px;height:62px;border-radius:16px;flex-shrink:0;box-shadow:0 6px 16px rgba(120,60,40,.18), inset 0 0 0 1px rgba(0,0,0,.06);background:{{ dupeImgBg }};"></span>
+      </div>
+
+      <sc-if value="{{ detailTwin }}" hint-placeholder-val="{{ true }}">
+      <p style="font-size:14px;line-height:1.5;color:#6B4A3E;margin:12px 0 18px;background:#fff;border:1px solid #F0DDD3;border-radius:14px;padding:13px 14px;text-wrap:pretty;">We use color science to calculate the distance (<b>ΔE</b>) between shades and find the ones your eyes can't tell apart. Then we rank them by <b>price</b>.</p>
+      </sc-if>
+      <sc-if value="{{ detailSelf }}" hint-placeholder-val="{{ false }}">
+      <p style="font-size:14px;line-height:1.5;color:#6B4A3E;margin:12px 0 18px;background:#fff;border:1px solid #F0DDD3;border-radius:14px;padding:13px 14px;text-wrap:pretty;">This is the lowest price we found for your shade. Here's where to grab it.</p>
+      </sc-if>
+
+      <!-- price comparison -->
+      <sc-if value="{{ dupeDiscontinued }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:flex-start;gap:9px;background:#FDF0EC;border:1px solid #F2CFC4;border-radius:13px;padding:11px 13px;margin:0 0 13px;font-size:12.5px;line-height:1.45;color:#8A4A3E;">
+        <span style="flex-shrink:0;font-family:'Space Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#B7484F;background:#F8DDD4;border-radius:5px;padding:3px 6px;margin-top:1px;">discontinued</span>
+        <span>{{ dupeDiscontinuedMsg }}</span>
+      </div>
+      </sc-if>
+      <div style="font-family:'Space Mono',monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:#A57E72;margin:0 2px 10px;">live prices · tap a store to buy</div>
+      <div style="display:flex;flex-direction:column;gap:9px;">
+        <sc-for list="{{ retailers }}" as="item" hint-placeholder-count="3">
+          <button onClick="{{ item.buy }}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;background:{{ item.rowBg }};border:1.5px solid {{ item.rowBorder }};border-radius:14px;padding:13px 15px;cursor:pointer;transition:transform .14s ease, box-shadow .14s ease;" style-hover="transform:scale(1.015);box-shadow:0 8px 20px rgba(120,60,40,.12);">
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+                <span style="width:9px;height:9px;border-radius:50%;flex-shrink:0;background:{{ item.dot }};"></span>
+                <span style="font-size:14.5px;font-weight:600;color:#241019;">{{ item.name }}</span>
+                <span style="font-family:'Space Mono',monospace;font-size:9.5px;letter-spacing:.08em;color:{{ item.tagColor }};">{{ item.tag }}</span>
+              </div>
+              <sc-if value="{{ item.hasTitle }}" hint-placeholder-val="{{ false }}">
+                <div style="margin:4px 0 0 19px;font-size:12px;line-height:1.4;color:#8A7068;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ item.title }}</div>
+              </sc-if>
+            </div>
+            <div style="display:flex;align-items:center;gap:11px;flex-shrink:0;">
+              <span style="font-size:16px;font-weight:700;color:#241019;">{{ item.price }}</span>
+              <span style="display:inline-flex;align-items:center;gap:3px;font-family:'Space Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#FF2E7E;">{{ item.buyLabel }} <span style="font-size:13px;">→</span></span>
+            </div>
+          </button>
+        </sc-for>
+      </div>
+
+      <button onClick="{{ onSearchAgain }}" style="margin-top:20px;align-self:center;font-size:13.5px;color:#A57E72;text-decoration:underline;text-underline-offset:3px;">find another twin</button>
+    </div>
+    </sc-if>
+
+    <!-- ============ ABOUT ============ -->
+    <sc-if value="{{ isAbout }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;display:flex;flex-direction:column;padding:6px 22px 32px;">
+      <button onClick="{{ onBackHome }}" style="display:inline-flex;align-items:center;gap:7px;font-size:13.5px;color:#6B4A3E;margin-bottom:14px;align-self:flex-start;">← back</button>
+
+      <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:33px;line-height:1.02;letter-spacing:-.025em;margin:0 0 10px;">How twin<span style="color:#FF2E7E;">.</span> works</h2>
+      <p style="font-size:14.5px;line-height:1.5;color:#6B4A3E;margin:0 0 22px;max-width:340px;text-wrap:pretty;">Same color, very different price tags. We find the lipsticks that look identical on your lips — then an AI agent shops around so you don't have to.</p>
+
+      <!-- steps diagram -->
+      <div style="display:flex;flex-direction:column;">
+
+        <div style="display:flex;gap:14px;">
+          <div style="display:flex;flex-direction:column;align-items:center;">
+            <span style="width:30px;height:30px;border-radius:50%;background:#FF2E7E;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:14px;flex-shrink:0;">1</span>
+            <span style="flex:1;width:2px;background:#EAD3C8;margin:4px 0;"></span>
+          </div>
+          <div style="flex:1;min-width:0;padding-bottom:16px;">
+            <div style="background:#fff;border:1px solid #F0DDD3;border-radius:16px;padding:14px 15px;box-shadow:0 4px 14px rgba(120,60,40,.05);">
+              <div style="font-size:15px;font-weight:700;color:#241019;">💄 You pick a shade</div>
+              <div style="font-size:13px;line-height:1.5;color:#6B4A3E;margin-top:5px;">Tell us the lipstick you're obsessed with.</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:14px;">
+          <div style="display:flex;flex-direction:column;align-items:center;">
+            <span style="width:30px;height:30px;border-radius:50%;background:#FF2E7E;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:14px;flex-shrink:0;">2</span>
+            <span style="flex:1;width:2px;background:#EAD3C8;margin:4px 0;"></span>
+          </div>
+          <div style="flex:1;min-width:0;padding-bottom:16px;">
+            <div style="background:#fff;border:1px solid #F0DDD3;border-radius:16px;padding:14px 15px;box-shadow:0 4px 14px rgba(120,60,40,.05);">
+              <div style="font-size:15px;font-weight:700;color:#241019;">🎨 Color science finds its twins</div>
+              <div style="font-size:13px;line-height:1.5;color:#6B4A3E;margin-top:5px;">We measure shades in CIELAB, the color space of human eyesight. Any shade closer than ΔE 2.3 looks identical on lips — that's a twin.</div>
+              <div style="display:flex;align-items:center;gap:9px;margin-top:10px;">
+                <span style="display:flex;border-radius:7px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);">
+                  <span style="width:34px;height:24px;background:#C0392B;"></span><span style="width:34px;height:24px;background:#C43730;"></span>
+                </span>
+                <span style="font-family:'Space Mono',monospace;font-size:10px;line-height:1.4;color:#A57E72;">ΔE 1.1 — two shades. your eye sees one.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:14px;">
+          <div style="display:flex;flex-direction:column;align-items:center;">
+            <span style="width:30px;height:30px;border-radius:50%;background:#FF2E7E;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:14px;flex-shrink:0;">3</span>
+            <span style="flex:1;width:2px;background:#EAD3C8;margin:4px 0;"></span>
+          </div>
+          <div style="flex:1;min-width:0;padding-bottom:16px;">
+            <div style="background:#fff;border:1px solid #F0DDD3;border-radius:16px;padding:14px 15px;box-shadow:0 4px 14px rgba(120,60,40,.05);">
+              <div style="font-size:15px;font-weight:700;color:#241019;">🤖 An AI agent goes shopping</div>
+              <div style="font-size:13px;line-height:1.5;color:#6B4A3E;margin-top:5px;">For each twin it runs a live Google search, opens real retailer pages, and verifies the brand, shade and price on the page itself. That's why results take a minute or two.</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:14px;">
+          <div style="display:flex;flex-direction:column;align-items:center;">
+            <span style="width:30px;height:30px;border-radius:50%;background:#FF2E7E;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:14px;flex-shrink:0;">4</span>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="background:#fff;border:1px solid #F0DDD3;border-radius:16px;padding:14px 15px;box-shadow:0 4px 14px rgba(120,60,40,.05);">
+              <div style="font-size:15px;font-weight:700;color:#241019;">🏷️ Cheapest twin wins</div>
+              <div style="font-size:13px;line-height:1.5;color:#6B4A3E;margin-top:5px;">Verified in-stock prices get ranked. You see the identical shade for the lowest price — with links to buy it.</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="margin-top:16px;background:#FCF3EE;border:1px solid #F0DDD3;border-radius:14px;padding:13px 14px;font-size:13px;line-height:1.5;color:#6B4A3E;"><b style="color:#241019;">What's ΔE?</b> A score for how different two colors look to a human. Below 1: identical. Below 2.3: you can't spot the difference side by side. We only call a shade your twin under that line.</div>
+
+      <button onClick="{{ onStart }}" style="margin-top:20px;width:100%;background:#3D1B31;color:#fff;border-radius:18px;padding:18px;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 12px 28px rgba(36,16,25,.22);" style-hover="background:#4E2440;">
+        Find my twin <span style="font-size:18px;">→</span>
+      </button>
+    </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { screen: 'landing', query: '', brand: null, anchor: null, agentStep: 0, dupe: null, selected: null, sort: 'price', downloaded: false, formatPref: 'any', outcome: null, error: null, catalogReady: false };
+
+  // Real, purchasable shades. Doubles as the \u0394E catalog stub: in production the
+  // tie set comes from the upstream Delta E ranker; here every anchor's tie set
+  // is this catalog (anchor itself at \u0394E 0, the rest at their stubbed distance).
+  // Curated, live-verified shades: shown as "popular" chips and used as the
+  // offline fallback catalog if Supabase is unreachable.
+  featured() {
+    return [
+      { brand: 'Dior', product: 'Addict Lip Glow Balm', shade: '004 Coral', hex: '#FC7854', price: 40, format: 'Balm', dE: 0.9 },
+      { brand: 'Chanel', product: 'Le Rouge Duo Ultra Tenue', shade: '124 Soft Candy', hex: '#FF7A85', price: 48, format: 'Matte', dE: 1.4 },
+      { brand: 'Chanel', product: 'Le Rouge Duo Ultra Tenue', shade: '104 Bright Raspberry', hex: '#E50643', price: 48, format: 'Matte', dE: 2.0 },
+      { brand: 'Charlotte Tilbury', product: 'Airbrush Flawless Lip Blur', shade: 'Honey Blur', hex: '#AE4D33', price: 35, format: 'Lipstick', dE: 2.4 },
+      { brand: 'Guerlain', product: 'KissKiss Bee Glow Lipstick Balm', shade: '258 Rose Glow', hex: '#FEB4BC', price: 40, format: 'Balm', dE: 2.9 },
+      { brand: 'Christian Louboutin', product: 'Satin Lip Color', shade: 'Let Me Tell You 220', hex: '#9E494E', price: 90, format: 'Satin', dE: 3.3 },
+      { brand: 'Shiseido', product: 'TechnoSatin Gel Lipstick', shade: '215 Future Shock', hex: '#D71F79', price: 32, format: 'Satin', dE: 1.8 }
+    ];
+  }
+
+  products() { return this._catalog || this.featured(); }
+
+  // Full lipstick catalog from the color-finder app's Supabase (publishable
+  // key — same one its website ships to browsers). ~9k rows, paged REST reads.
+  async loadCatalog() {
+    if (this._catalog || this._loadingCatalog) return;
+    this._loadingCatalog = true;
+    const BASE = 'https://xhmxvocjqcccrriovyfj.supabase.co/rest/v1/lipstick-data';
+    const KEY = 'sb_publishable_2RQlqm5VuZaTBZ7qrd5V1A_eSjFIpaB';
+    const COLS = 'brand,product,shade,finish,lab_l,lab_a,lab_b,hex,image_url';
+    const t0 = Date.now();
+    try {
+      const all = [];
+      for (let page = 0; page < 20; page++) {
+        const res = await fetch(BASE + '?select=' + COLS + '&order=brand.asc,product.asc,shade.asc', {
+          headers: { apikey: KEY, Authorization: 'Bearer ' + KEY, Range: (page * 1000) + '-' + (page * 1000 + 999) }
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const rows = await res.json();
+        all.push(...rows);
+        if (rows.length < 1000) break;
+      }
+      this._catalog = all
+        .filter(r => r.lab_l != null && r.hex && r.brand && r.shade)   // 18 rows have a null shade
+        .map(r => ({
+          brand: r.brand, product: r.product || '', shade: r.shade,
+          hex: r.hex[0] === '#' ? r.hex : '#' + r.hex,
+          format: r.finish, lab: [r.lab_l, r.lab_a, r.lab_b],
+          img: r.image_url || null
+        }));
+      this.logEvent('catalog_loaded', { rows: this._catalog.length, load_s: Math.round((Date.now() - t0) / 100) / 10 });
+      try { this.setState({ catalogReady: true }); } catch (err) {}
+    } catch (err) {
+      this.logEvent('catalog_load_failed', { message: String(err && err.message || err) });
+    } finally {
+      this._loadingCatalog = false;
+    }
+  }
+
+  componentDidMount() { this.loadCatalog(); }
+
+  isSame(a, b) { return a && b && a.brand === b.brand && a.shade === b.shade; }
+
+  // ΔE76 in CIELAB — ported from the color-finder app (lipstick-utils.js).
+  deltaE76(l1, l2) {
+    return Math.sqrt((l1[0] - l2[0]) ** 2 + (l1[1] - l2[1]) ** 2 + (l1[2] - l2[2]) ** 2);
+  }
+  hexToLab(hex) {
+    const r = parseInt(hex.slice(1, 3), 16) / 255, g = parseInt(hex.slice(3, 5), 16) / 255, b = parseInt(hex.slice(5, 7), 16) / 255;
+    const lin = v => v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    const lr = lin(r), lg = lin(g), lb = lin(b);
+    const x = (0.4124564 * lr + 0.3575761 * lg + 0.1804375 * lb) / 0.95047;
+    const y = (0.2126729 * lr + 0.7151522 * lg + 0.0721750 * lb) / 1.00000;
+    const z = (0.0193339 * lr + 0.1191920 * lg + 0.9503041 * lb) / 1.08883;
+    const f = t => t > 0.008856 ? Math.cbrt(t) : (903.3 * t + 16) / 116;
+    const fx = f(x), fy = f(y), fz = f(z);
+    return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
+  }
+
+  // Resolve a curated chip to its real catalog row (DB names are lowercase,
+  // e.g. 'MAC' → 'mac cosmetics').
+  findInCatalog(brand, shade) {
+    if (!this._catalog) return null;
+    const b = brand.toLowerCase().split(' ')[0], s = shade.toLowerCase();
+    return this._catalog.find(p => p.shade && p.brand && p.shade.toLowerCase() === s && p.brand.toLowerCase().startsWith(b)) || null;
+  }
+
+  // The tie set the agent prices: the anchor + its 3 closest catalog twins by
+  // ΔE. Capped because each candidate is a paid, ~20s live agent run — this is
+  // also the per-query result limit users see.
+  tieSetFor(anchor) {
+    const cat = this._catalog;
+    if (!cat) {
+      return this.featured().map(p => ({
+        brand: p.brand, product: p.product, shade: p.shade,
+        delta_e: this.isSame(p, anchor) ? 0 : p.dE,
+        hex: p.hex, format: p.format
+      }));
+    }
+    const lab = anchor.lab || (this.findInCatalog(anchor.brand, anchor.shade) || {}).lab || this.hexToLab(anchor.hex);
+    // "Same finish only" must narrow the pool *before* ranking — every tie-set
+    // slot is a paid agent run, so a wrong-finish candidate is a wasted slot.
+    const fmt = anchor.format;
+    const pool = (this.state.formatPref === 'same' && fmt)
+      ? cat.filter(p => (p.format || '').toLowerCase() === fmt.toLowerCase())
+      : cat;
+    // One entry per product line — two shades of the same lipstick aren't two dupes.
+    const lineKey = p => (p.brand + '|' + p.product).toLowerCase();
+    const seen = new Set([lineKey(anchor)]);
+    const out = [{ brand: anchor.brand, product: anchor.product, shade: anchor.shade, delta_e: 0, hex: anchor.hex, format: anchor.format }];
+    const ranked = pool.map(p => ({ p, d: this.deltaE76(lab, p.lab) })).sort((a, b) => a.d - b.d);
+    for (const { p, d } of ranked) {
+      // TEMP (demo/screenshots): widened from `out.length >= 4` (anchor + 3) to
+      // anchor + 6. Gated at ΔE<6 (not the 2.3 twin line — many anchors have no
+      // sub-2.3 neighbor and the set collapsed to just the anchor). Each slot is
+      // a paid sequential agent run — revert to `>= 4` after.
+      if (out.length >= 7) break;
+      if (Math.round(d * 100) / 100 >= 6) break; // ranked ascending: rest are further still
+      if (seen.has(lineKey(p))) continue;
+      seen.add(lineKey(p));
+      out.push({ brand: p.brand, product: p.product, shade: p.shade, delta_e: Math.round(d * 100) / 100, hex: p.hex, format: p.format });
+    }
+    return out;
+  }
+
+  steps() {
+    return [
+      'Reading the shade in CIELAB\u2026',
+      'Pulling its \u0394E twins from the catalog\u2026',
+      'Agent searching live retailer prices\u2026',
+      'Visiting product pages to verify\u2026',
+      'Ranking the twins by verified price\u2026'
+    ];
+  }
+
+  matchWord(dE) {
+    if (dE < 1.5) return 'identical twin';
+    if (dE < 3.0) return 'separated at birth';
+    if (dE < 4.5) return 'fraternal twin';
+    return 'doppelg\u00e4nger';
+  }
+
+  matchColors(dE) {
+    if (dE < 1.5) return { bg: '#D4EDDB', dot: '#0B7A43', fg: '#0A5A33' }; // deep green
+    if (dE < 3.0) return { bg: '#DEEFCF', dot: '#4C9B2E', fg: '#357020' }; // green
+    if (dE < 4.5) return { bg: '#E8F3DC', dot: '#A3C585', fg: '#5C7F42' }; // light green
+    return { bg: '#F0F6EA', dot: '#BFD3A8', fg: '#71875A' };               // very light green
+  }
+
+  matchLevel(dE) {
+    if (dE < 1.5) return 4;
+    if (dE < 3.0) return 3;
+    if (dE < 4.5) return 2;
+    return 1;
+  }
+
+  hex2rgb(h) { h = h.replace('#', ''); return [0, 2, 4].map(i => parseInt(h.substr(i, 2), 16)); }
+  rgb2hex(a) { return '#' + a.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join(''); }
+  fmtPrice(n) { return n == null ? '—' : '$' + (Number.isInteger(n) ? n : Number(n).toFixed(2)); }
+
+  go(s) { this.setState({ screen: s }); }
+  start() { this.loadCatalog(); this.go('search'); }
+  // Anonymous per-browser id so a tester's events can be stitched into one journey.
+  sid() {
+    try {
+      let s = localStorage.getItem('twin_sid');
+      if (!s) { s = Math.random().toString(36).slice(2, 10); localStorage.setItem('twin_sid', s); }
+      return s;
+    } catch (err) { return 'unknown'; }
+  }
+  // Fire-and-forget usage beacon; sendBeacon survives the tab closing mid-flight.
+  logEvent(event, data) {
+    try {
+      const body = JSON.stringify({ event, sid: this.sid(), ...data });
+      if (navigator.sendBeacon) navigator.sendBeacon('/api/log', new Blob([body], { type: 'application/json' }));
+      else fetch('/api/log', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }).catch(() => {});
+    } catch (err) {}
+  }
+
+  onQuery(e) {
+    const query = e.target.value;
+    this.setState({ query, selected: null });
+    // Log searches that match nothing in the catalog — the clearest signal for
+    // which shades to add next. Debounced so we log the settled string, not keystrokes.
+    clearTimeout(this._qLog);
+    const q = query.trim().toLowerCase();
+    if (q.length < 3) return;
+    this._qLog = setTimeout(() => {
+      const brand = this.state.brand;
+      const hit = brand
+        ? this.products().some(p => p.brand === brand && (this.wordHit(p.shade, q) || this.wordHit(p.product, q)))
+        : this.products().some(p => this.wordHit(p.brand, q));
+      if (!hit) this.logEvent('search_no_match', { query: q, brand: brand || null, catalog: this._catalog ? this._catalog.length : 0 });
+    }, 1200);
+  }
+  // Match at word starts only: "ru" hits "Ruby Woo" but not "brushed" or "syrup".
+  wordHit(text, q) { return (' ' + String(text || '').toLowerCase()).includes(' ' + q); }
+  // Brands with their shade swatches, filtered by the query (prefix hits first).
+  brandList(q) {
+    const byBrand = new Map();
+    for (const p of this.products()) {
+      if (!byBrand.has(p.brand)) byBrand.set(p.brand, []);
+      byBrand.get(p.brand).push(p);
+    }
+    return [...byBrand.entries()]
+      .filter(([name]) => this.wordHit(name, q))
+      .sort((a, b) => {
+        const ap = a[0].toLowerCase().startsWith(q) ? 0 : 1;
+        const bp = b[0].toLowerCase().startsWith(q) ? 0 : 1;
+        return ap - bp || a[0].localeCompare(b[0]);
+      })
+      .slice(0, 6)
+      .map(([name, rows]) => ({
+        name,
+        count: rows.length + (rows.length === 1 ? ' shade' : ' shades'),
+        swatches: rows.slice(0, 5).map(r => r.hex),
+        pick: () => this.pickBrand(name)
+      }));
+  }
+  pickBrand(name) { this.setState({ brand: name, query: '', selected: null }); }
+  choose(p) { this.setState({ selected: p, brand: p.brand, query: p.shade }); }
+
+  pick(p) {
+    this.clearTimers();
+    this.setState({ screen: 'agent', anchor: p, agentStep: 0, outcome: null, error: null, downloaded: false });
+    // The step animation paces itself against a real 1–3 minute agent run:
+    // advance slowly and hold on the last step until the response lands.
+    const st = this.steps();
+    this._timers = [];
+    [600, 8000, 20000, 60000, 100000].forEach((delay, i) => {
+      if (i < st.length) this._timers.push(setTimeout(() => this.setState({ agentStep: i }), delay));
+    });
+    const run = this._run = (this._run || 0) + 1;
+    const t0 = this._waitT0 = Date.now();
+    const waited = () => Math.round((Date.now() - t0) / 100) / 10;   // seconds, 0.1s precision
+    // A run should never exceed ~3 min; abort at 4 so a lost connection can't
+    // strand the agent screen forever (fetch has no timeout of its own).
+    const ctrl = new AbortController();
+    const killT = setTimeout(() => ctrl.abort(), 240000);
+    fetch('/api/find-dupes', {
+      method: 'POST',
+      signal: ctrl.signal,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tie_set: this.tieSetFor(p), country: 'US', strategy: 'cheapest',
+        // What the user actually did in the UI — server logs it for later analysis.
+        client: { sid: this.sid(), query: this.state.query.trim(), anchor: p.brand + ' ' + p.shade, format_pref: this.state.formatPref }
+      })
+    })
+      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(outcome => {
+        clearTimeout(killT);
+        if (run !== this._run) return;   // user reset/left while in flight
+        this.clearTimers();
+        this.logEvent('results_shown', { anchor: p.brand + ' ' + p.shade, wait_s: waited() });
+        this.setState({ screen: 'results', outcome });
+      })
+      .catch(err => {
+        clearTimeout(killT);
+        if (run !== this._run) return;
+        this.clearTimers();
+        this.logEvent('run_failed_client', { anchor: p.brand + ' ' + p.shade, wait_s: waited(), message: String(err && err.message || err) });
+        this.setState({ screen: 'search', error: 'The price agent hit a snag — give it another try.' });
+      });
+    // If the tab closes while the agent is still working, that's an abandoned
+    // wait — the strongest signal the 1–2 minute run is too long.
+    if (!this._pagehide) {
+      this._pagehide = () => { if (this.state.screen === 'agent') this.logEvent('left_during_wait', { anchor: (this.state.anchor || {}).shade, wait_s: this.waitedSoFar() }); };
+      window.addEventListener('pagehide', this._pagehide);
+    }
+  }
+  waitedSoFar() { return this._waitT0 ? Math.round((Date.now() - this._waitT0) / 100) / 10 : null; }
+  logAbandonIfWaiting() {
+    if (this.state.screen === 'agent') this.logEvent('abandoned_wait', { anchor: (this.state.anchor || {}).shade, wait_s: this.waitedSoFar() });
+  }
+  clearTimers() { (this._timers || []).forEach(clearTimeout); this._timers = []; }
+  componentWillUnmount() { this.clearTimers(); }
+
+  bestOffer(cand) {
+    const inStock = (cand && cand.prices || []).filter(p => p.price != null && p.in_stock);
+    // Stores first (cheapest leading); blog/review prices trail — they prove the
+    // price is real but aren't places to buy, so they never set the deal price.
+    const store = p => !p.source_type || p.source_type === 'ecommerce';
+    return inStock.sort((a, b) => ((store(b) ? 1 : 0) - (store(a) ? 1 : 0)) || (a.price - b.price));
+  }
+  // Priced listings that aren't buyable right now — verified out of stock, or
+  // blog price checks with unknown stock. They trail the live offers in detail
+  // views, and a candidate with only these still gets a (greyed) card.
+  deadOffers(cand) {
+    return (cand && cand.prices || [])
+      .filter(p => p.price != null && !p.in_stock)
+      .sort((a, b) => a.price - b.price);
+  }
+  // '$14–$25' (cents only when they matter) — a range of last-seen prices is a
+  // reference, not a quote, so it reads better compact.
+  priceRange(offers) {
+    if (!offers.length) return '—';
+    const money = v => '$' + (v % 1 ? v.toFixed(2) : v.toFixed(0));
+    const lo = Math.min(...offers.map(p => p.price));
+    const hi = Math.max(...offers.map(p => p.price));
+    return lo === hi ? money(lo) : money(lo) + '–' + money(hi);
+  }
+  // Product photo for a candidate, resolved client-side from the catalog —
+  // the backend never sees image URLs, so priced candidates coming back from
+  // it are matched to their catalog row here (product line first, since one
+  // shade name can span several lines of the same brand).
+  catalogImg(c) {
+    if (!c) return null;
+    if (c.img) return c.img;
+    if (!this._catalog) return null;
+    const k = s => String(s || '').toLowerCase();
+    const row = this._catalog.find(p => k(p.brand) === k(c.brand) && k(p.shade) === k(c.shade) && k(p.product) === k(c.product))
+      || this._catalog.find(p => k(p.brand) === k(c.brand) && k(p.shade) === k(c.shade));
+    return (row && row.img) || null;
+  }
+  // Photo tiles are plain CSS backgrounds over #fff: brand CDNs are flaky
+  // (some hosts are dead), and a failed background-image just leaves the tile
+  // blank instead of a broken-image icon. No image → tile hidden entirely,
+  // and the plain background means nothing is fetched.
+  imgTile(img) {
+    return img
+      ? { bg: '#fff url("' + img + '") center/cover no-repeat', disp: 'block' }
+      : { bg: '#fff', disp: 'none' };
+  }
+
+  anchorCandidate() {
+    const out = this.state.outcome, a = this.state.anchor;
+    return out && a ? (out.all_candidates || []).find(c => this.isSame(c, a)) : null;
+  }
+  anchorBestPrice() {
+    const a = this.state.anchor || this.products()[0];
+    const offers = this.bestOffer(this.anchorCandidate());
+    // Catalog rows carry no retail price — if the agent couldn't verify one
+    // for the anchor, the price is simply unknown (null).
+    return offers.length ? offers[0].price : (a.price != null ? a.price : null);
+  }
+
+  openDupe(d) {
+    this.logEvent('open_twin', { brand: d.brand, shade: d.shade, delta_e: d.dE, price: d.dealPrice });
+    this.setState({ screen: 'detail', dupe: d });
+  }
+  openShade() {
+    const a = this.state.anchor || this.products()[0];
+    const cand = this.anchorCandidate();
+    const offers = this.bestOffer(cand);
+    const dead = this.deadOffers(cand);
+    const dealPrice = offers.length ? offers[0].price : (a.price != null ? a.price : null);
+    this.setState({ screen: 'detail', dupe: { brand: a.brand, product: a.product, shade: a.shade, hex: a.hex, img: this.catalogImg(a), dE: 0, dealPrice, dealPriceStr: this.fmtPrice(dealPrice), retailer: offers.length ? offers[0].retailer : null, allPrices: [...offers, ...dead], discontinued: !!(cand && cand.status === 'discontinued'), self: true } });
+  }
+  back() { this.setState({ screen: 'results' }); }
+  reset() { this.logAbandonIfWaiting(); this.clearTimers(); this._run = (this._run || 0) + 1; this.setState({ screen: 'landing', query: '', brand: null, anchor: null, dupe: null, selected: null, downloaded: false, formatPref: 'any', outcome: null, error: null }); }
+
+  // Build a plain-text report of the run — your shade plus every twin with its
+  // color match, verified offers, exact page titles, and buy links — and save it.
+  downloadResults() {
+    const anchor = this.state.anchor || this.products()[0];
+    const anchorPrice = this.anchorBestPrice();
+    // Sold-out twins (null dealPrice) sink to the end of the ranking.
+    const dupes = this.buildDupes(anchor, anchorPrice).sort((a, b) => (a.dealPrice ?? Infinity) - (b.dealPrice ?? Infinity));
+    const L = [];
+    const offerLines = (offers, base) => {
+      (offers || []).forEach(p => {
+        const store = !p.source_type || p.source_type === 'ecommerce';
+        L.push('   - ' + (p.retailer || 'web result') + ' — $' + p.price.toFixed(2) + (p.in_stock ? ' (in stock)' : (store && p.in_stock === false ? ' (out of stock)' : '')) + (store ? '' : ' (price seen on ' + (p.source_type === 'blog' ? 'review site' : 'web') + ')'));
+        const t = (p.product_title || '').split('|')[0].trim();
+        if (t) L.push('     ' + t);
+        // Fallback search query is the product only — retailer names skew it.
+        L.push('     ' + ((store && p.url) ? p.url : 'https://www.google.com/search?udm=28&q=' + encodeURIComponent(((p.product_title || '').split('|')[0].trim()) || base)));
+      });
+    };
+    L.push('FIND YOUR LIPSTICK TWIN — results');
+    L.push('Generated ' + new Date().toLocaleString());
+    L.push('');
+    L.push('YOUR SHADE');
+    L.push(anchor.brand + ' ' + (anchor.product || '') + ' — shade "' + anchor.shade + '"');
+    const aCand = this.anchorCandidate();
+    const aOffers = this.bestOffer(aCand);
+    if (aCand && aCand.status === 'discontinued') {
+      L.push(aOffers.length
+        ? 'Status: appears discontinued — the stores below still had stock when we checked.'
+        : 'Status: appears discontinued — no stores had it in stock.');
+    }
+    L.push('Best price found: ' + this.fmtPrice(anchorPrice));
+    offerLines([...aOffers, ...this.deadOffers(aCand)], [anchor.brand, anchor.product, anchor.shade].filter(Boolean).join(' '));
+    L.push('');
+    L.push('TWINS, RANKED BY PRICE');
+    dupes.forEach((d, i) => {
+      L.push('');
+      L.push((i + 1) + '. ' + d.brand + ' ' + (d.product || '') + ' — shade "' + d.shade + '"');
+      if (d.discontinued) L.push('   Appears discontinued' + (d.soldOut ? '.' : ' — listed stores had remaining stock when we checked.'));
+      L.push('   Color match: ΔE ' + d.dE.toFixed(1) + ' (' + this.matchWord(d.dE) + ')');
+      L.push('   ' + (d.soldOut
+        ? 'No store had it in stock when we checked — prices below were the last seen.'
+        : (d.cheaper ? d.savePct + '% cheaper than your shade' : (d.diffStr === '' ? 'cheapest verified price for this color' : 'costs more than your shade'))));
+      L.push('   ' + (d.soldOut ? 'Last seen:' : 'Where to buy:'));
+      offerLines(d.allPrices, [d.brand, d.product, d.shade].filter(Boolean).join(' '));
+    });
+    L.push('');
+    L.push(dupes.every(d => d.dE < 2.3)
+      ? 'All twins sit below the ΔE 2.3 just-noticeable threshold — your eye can\'t tell them apart.'
+      : 'ΔE below 2.3 means your eye can\'t tell the two colors apart side by side.');
+    const blob = new Blob([L.join('\n')], { type: 'text/plain;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = ('lipstick-twins-' + anchor.shade).toLowerCase().replace(/[^a-z0-9]+/g, '-') + '.txt';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    this.logEvent('download_txt', { anchor: anchor.brand + ' ' + anchor.shade });
+    this.setState({ downloaded: true });
+  }
+
+  // Map the agent's priced candidates onto dupe cards. A candidate with no
+  // in-stock offer still renders — greyed, priced with the range we last saw —
+  // because "this twin exists but is sold out" is real information; only
+  // candidates with no price evidence at all are dropped.
+  buildDupes(anchor, anchorPrice) {
+    const out = this.state.outcome;
+    if (!out) return [];
+    return (out.all_candidates || [])
+      .filter(c => !this.isSame(c, anchor))
+      .map(c => {
+        const offers = this.bestOffer(c);
+        const dead = this.deadOffers(c);
+        if (!offers.length && !dead.length) return null;
+        const soldOut = !offers.length;
+        const dealPrice = soldOut ? null : offers[0].price;
+        const dE = c.delta_e;
+        const isTwin = dE < 2.3;
+        const knownAnchor = anchorPrice != null;
+        const savePct = (!soldOut && knownAnchor) ? Math.round((1 - dealPrice / anchorPrice) * 100) : 0;
+        const cheaper = !soldOut && knownAnchor && dealPrice < anchorPrice;
+        // A verified out-of-stock listing earns the honest label; blog-only
+        // price sightings never confirmed stock either way.
+        const diffStr = soldOut
+          ? (dead.some(p => p.in_stock === false) ? 'out of stock' : 'stock unknown')
+          : !knownAnchor ? '' : cheaper ? 'save ' + savePct + '%' : '+$' + (dealPrice - anchorPrice).toFixed(2);
+        const diffColor = cheaper ? '#1FAE6B' : '#B79A91';
+        const col = this.matchColors(dE);
+        const level = this.matchLevel(dE);
+        const meter = [0, 1, 2, 3].map(i => i < level ? col.dot : '#E7D8CE');
+        const img = this.catalogImg(c);
+        const tile = this.imgTile(img);
+        return {
+          brand: c.brand, product: c.product, shade: c.shade, hex: c.hex || anchor.hex, format: c.format,
+          img, imgBg: tile.bg, imgDisp: tile.disp,
+          dE, dealPrice, retailer: soldOut ? null : offers[0].retailer, url: soldOut ? null : offers[0].url,
+          allPrices: [...offers, ...dead],
+          discontinued: c.status === 'discontinued',
+          soldOut, cardOpacity: soldOut ? '.62' : '1',
+          isTwin, savePct, level, meter, cheaper, diffStr, diffColor,
+          dealPriceStr: soldOut ? this.priceRange(dead) : '$' + dealPrice.toFixed(2),
+          badgeLabel: this.matchWord(dE),
+          badgeBg: col.bg, badgeDot: col.dot, badgeFg: col.fg
+        };
+      })
+      .filter(Boolean);
+  }
+
+  renderVals() {
+    const products = this.products();
+    const q = this.state.query.trim().toLowerCase();
+    const sel = this.state.selected;
+    const brand = this.state.brand;
+    const brandMatches = (!brand && q) ? this.brandList(q) : [];
+    // With a brand picked and no query yet, surface its first shades right away.
+    // Typing filters that brand's shades at word starts; shade-name hits rank
+    // above product-line hits so "ruby" leads with the Ruby shades.
+    const inBrand = brand ? products.filter(p => p.brand === brand) : [];
+    const matches = (q
+      ? inBrand
+          .filter(p => this.wordHit(p.shade, q) || this.wordHit(p.product, q))
+          .sort((a, b) => ((this.wordHit(b.shade, q) ? 1 : 0) - (this.wordHit(a.shade, q) ? 1 : 0)) || a.shade.localeCompare(b.shade))
+      : inBrand
+    ).slice(0, 6).map(p => ({ ...p, line: p.product || p.brand, pick: () => this.choose(p) }));
+    const anchor = this.state.anchor || products[0];
+    const anchorPrice = this.anchorBestPrice();
+    const anchorCand = this.anchorCandidate();
+    // Discontinued ≠ unavailable: the agent may still find remaining stock, so
+    // the status label coexists with a real price instead of replacing it.
+    const anchorDiscontinued = !!(anchorCand && anchorCand.status === 'discontinued');
+    // Availability badge shown next to the shade name. Discontinued wins; else,
+    // if the agent found the shade but no in-stock listing, it's out of stock.
+    const anchorSoldOut = !anchorDiscontinued && anchorPrice == null && !!anchorCand;
+    const anchorStatus = anchorDiscontinued ? 'discontinued' : (anchorSoldOut ? 'out of stock' : '');
+    const all = this.buildDupes(anchor, anchorPrice);
+    const pref = this.state.formatPref;
+    const fmt = anchor.format;
+    let twins = all.filter(x => x.isTwin && !x.soldOut);
+    let near = all.filter(x => !x.isTwin && !x.soldOut);
+    // Sold-out twins trail the buyable list (closest color first) and never
+    // compete for the cheapest-twin crown.
+    let soldOut = all.filter(x => x.soldOut);
+    if (pref === 'same' && fmt) {
+      twins = twins.filter(x => x.format === fmt);
+      near = near.filter(x => x.format === fmt);
+      soldOut = soldOut.filter(x => x.format === fmt);
+    }
+    twins = twins.sort((a, b) => a.dealPrice - b.dealPrice);
+    near = near.sort((a, b) => a.dealPrice - b.dealPrice);
+    soldOut = soldOut.sort((a, b) => a.dE - b.dE);
+    const live = this.state.sort === 'color'
+      ? [...twins, ...near].sort((a, b) => a.dE - b.dE)
+      : [...twins, ...near];
+    const ordered = [...live, ...soldOut];
+    // Cheapest buyable match: prefer the cheapest true twin, else the cheapest
+    // near-match. Both `twins` and `near` are price-sorted above, so `best` (and
+    // thus the savings banner + crown) is independent of the display sort —
+    // reordering by color must NOT change what counts as the cheapest.
+    const best = twins[0] || near[0];
+    // Unknown anchor price → the cheapest verified twin is still the win.
+    const hasSavings = best ? (anchorPrice == null || best.dealPrice < anchorPrice) : false;
+    const bestKey = best ? best.brand + best.shade : '';
+    const dupes = ordered.map(d => {
+      const isBest = hasSavings && (d.brand + d.shade) === bestKey;
+      // Cheapest twin gets a 2px border in the same pink as its "cheapest twin" tag.
+      // The pink tag bar is driven by pure value bindings (never a display toggle)
+      // so it follows the cheapest card across a reorder; non-best cards collapse
+      // it to zero width / transparent / empty so nothing shows.
+      return {
+        ...d,
+        isBest,
+        bestTagW: isBest ? 'auto' : '0px',
+        bestTagBg: isBest ? '#FF2E7E' : 'transparent',
+        bestTagPad: isBest ? '6px 5px' : '0',
+        bestTagMargin: isBest ? '-13px -13px -13px 5px' : '0',
+        bestTagText: isBest ? 'cheapest twin' : '',
+        cardBorder: isBest ? '2px solid #FF2E7E' : '1px solid #F0DDD3',
+        open: () => this.openDupe(d)
+      };
+    });
+
+    const st = this.steps();
+    const step = this.state.agentStep;
+    // Hold short of 100% — the bar only fills when real results arrive.
+    const pct = Math.min(Math.round((step + 1) / st.length * 100), 92);
+
+    // Curated chips, swapped for their real catalog rows (with LAB) once loaded.
+    const examples = this.featured().map(f => {
+      const real = this.findInCatalog(f.brand, f.shade);
+      const p = real || f;
+      return { ...p, label: f.brand + ' · ' + f.shade, brandLabel: f.brand, shadeLabel: f.shade, pick: () => this.choose(p) };
+    }).sort((a, b) => a.label.localeCompare(b.label));
+
+    const d = this.state.dupe;
+    // Product-photo tiles for the staged shade, the results header, the
+    // cheapest-twin banner, and the detail screen. Hidden (nothing fetched)
+    // when the catalog has no image for the shade.
+    const selTile = this.imgTile(this.catalogImg(sel));
+    const anchorTile = this.imgTile(this.catalogImg(anchor));
+    const dupeTile = this.imgTile(d && d.img);
+    let retailers = [];
+    if (d) {
+      // Real agent-verified offers for this candidate, cheapest first. When the
+      // agent fetched the page it recorded the verbatim product title — show it,
+      // since one shade name can span several product lines (full-size vs mini).
+      const cleanTitle = t => (t || '').split('|')[0].trim();
+      // A blog/review source (e.g. temptalia.com) proves the price is grounded but
+      // isn't a place to buy — those, and store offers with no working URL, all
+      // collapse into ONE Google Shopping row below instead of a row per source.
+      const isStore = p => !p.source_type || p.source_type === 'ecommerce';
+      // udm=28 is Google Shopping's tab on plain google.com — the old
+      // shopping.google.com/search host now serves a "Not available" page.
+      // The query is the product only — never a retailer name, which just skews
+      // Shopping's matching.
+      const searchUrl = 'https://www.google.com/search?udm=28&q=' + encodeURIComponent([d.brand, d.product, d.shade].filter(Boolean).join(' '));
+      const offers = d.allPrices || [];
+      const direct = offers.filter(p => p.url && isStore(p));
+      const indirect = offers.filter(p => !(p.url && isStore(p)));
+      // The green CHEAPEST tag marks the lowest in-stock price. It's a tie: EVERY
+      // in-stock store offering that price is crowned, not just the first one.
+      let crownedDirect = false;
+      retailers = direct.map(p => {
+        const live = !!p.in_stock;
+        const isBest = live && p.price === d.dealPrice;
+        if (isBest) crownedDirect = true;
+        return {
+          name: p.retailer || 'web result',
+          title: cleanTitle(p.product_title),
+          hasTitle: !!cleanTitle(p.product_title),
+          buyLabel: live ? 'buy' : 'view',
+          price: '$' + p.price.toFixed(2),
+          best: isBest,
+          rowBg: isBest ? '#E7F6EE' : '#ffffff',
+          rowBorder: isBest ? '#1FAE6B' : '#F0DDD3',
+          dot: isBest ? '#1FAE6B' : '#D6B5A8',
+          tag: isBest ? 'CHEAPEST' : (live ? 'in stock' : 'out of stock'),
+          tagColor: isBest ? '#147A4C' : (live ? '#A57E72' : '#B7484F'),
+          buy: () => {
+            this.logEvent('buy_click', { retailer: p.retailer, brand: d.brand, shade: d.shade, price: p.price, direct_link: true, source_type: p.source_type || null });
+            window.open(p.url, '_blank', 'noopener');
+          }
+        };
+      });
+      if (indirect.length) {
+        const seenAt = [...new Set(indirect.map(p => p.retailer).filter(Boolean))];
+        const isBest = !crownedDirect && indirect.some(p => p.in_stock && p.price === d.dealPrice);
+        retailers.push({
+          name: 'Google Shopping',
+          title: seenAt.length ? 'price seen at ' + seenAt.join(', ') : '',
+          hasTitle: !!seenAt.length,
+          buyLabel: 'find',
+          price: this.priceRange(indirect),
+          best: isBest,
+          rowBg: isBest ? '#E7F6EE' : '#ffffff',
+          rowBorder: isBest ? '#1FAE6B' : '#F0DDD3',
+          dot: isBest ? '#1FAE6B' : '#D6B5A8',
+          tag: isBest ? 'CHEAPEST' : 'price check',
+          tagColor: isBest ? '#147A4C' : '#A57E72',
+          buy: () => {
+            this.logEvent('buy_click', { retailer: 'google_shopping', brand: d.brand, shade: d.shade, price: Math.min(...indirect.map(p => p.price)), direct_link: false, source_type: 'search' });
+            window.open(searchUrl, '_blank', 'noopener');
+          }
+        });
+      }
+    }
+
+    return {
+      isLanding: this.state.screen === 'landing',
+      notLanding: this.state.screen !== 'landing',
+      isSearch: this.state.screen === 'search',
+      isAgent: this.state.screen === 'agent',
+      isResults: this.state.screen === 'results',
+      isDetail: this.state.screen === 'detail',
+      isAbout: this.state.screen === 'about',
+      onAbout: () => this.go('about'),
+      onBackHome: () => this.go('landing'),
+      query: this.state.query,
+      onQuery: e => this.onQuery(e),
+      noBrand: !brand,
+      hasBrand: !!brand,
+      brandName: brand,
+      brandMatches,
+      showBrandList: !brand && q.length > 0 && !sel,
+      noBrandMatches: q.length > 0 && brandMatches.length === 0,
+      showShadeList: !!brand && !sel,
+      onChangeBrand: () => this.setState({ brand: null, query: '', selected: null }),
+      showChips: !sel && !brand,
+      selected: !!sel,
+      shadeUnpicked: !sel,
+      selBrand: sel && sel.brand, selShade: sel && sel.shade, selHex: sel && sel.hex,
+      selImgBg: selTile.bg, selImgDisp: selTile.disp,
+      selFormat: sel && (sel.format || 'lipstick'),
+      selFormatLower: sel && (sel.format || 'lipstick').toLowerCase(),
+      formatSame: this.state.formatPref === 'same',
+      formatAny: this.state.formatPref === 'any',
+      sameBg: this.state.formatPref === 'same' ? '#fff' : 'transparent',
+      sameFg: this.state.formatPref === 'same' ? '#FF2E7E' : '#8A7068',
+      sameShadow: this.state.formatPref === 'same' ? '0 2px 6px rgba(120,60,40,.14)' : 'none',
+      anyBg: this.state.formatPref === 'any' ? '#fff' : 'transparent',
+      anyFg: this.state.formatPref === 'any' ? '#FF2E7E' : '#8A7068',
+      anyShadow: this.state.formatPref === 'any' ? '0 2px 6px rgba(120,60,40,.14)' : 'none',
+      onFormatSame: () => this.setState({ formatPref: 'same' }),
+      onFormatAny: () => this.setState({ formatPref: 'any' }),
+      onFindTwin: () => { if (sel) this.pick(sel); },
+      onChangeSel: () => this.setState({ selected: null }),
+      noMatches: q.length > 0 && matches.length === 0,
+      matches, examples, dupes,
+      anchorHex: anchor.hex, anchorName: anchor.shade, anchorBrand: anchor.brand,
+      anchorImgBg: anchorTile.bg, anchorImgDisp: anchorTile.disp,
+      anchorPrice: this.fmtPrice(anchorPrice),
+      anchorPriceNote: anchorPrice == null ? '' : 'retail',
+      anchorStatus, anchorHasStatus: !!anchorStatus,
+      hasError: !!this.state.error, errorMsg: this.state.error,
+      hasSavings, noSavings: !hasSavings,
+      twinCount: twins.length,
+      agentLabel: st[step], agentStepNum: 'Step ' + (step + 1), agentPctStr: pct + '%',
+      sortBy: this.state.sort,
+      onSort: e => this.setState({ sort: e.target.value }),
+      downloaded: this.state.downloaded,
+      notDownloaded: !this.state.downloaded,
+      onDownload: () => this.downloadResults(),
+      onStart: () => this.start(), onBack: () => this.back(), onReset: () => this.reset(),
+      onSearchAgain: () => { this.logAbandonIfWaiting(); this.clearTimers(); this._run = (this._run || 0) + 1; this.setState({ screen: 'search', query: '', brand: null, selected: null, anchor: null, dupe: null, formatPref: 'any', outcome: null, error: null }); },
+      dupeName: d && d.shade, dupeBrand: d && d.brand, dupeHex: d && d.hex,
+      dupeImgBg: dupeTile.bg, dupeImgDisp: dupeTile.disp,
+      dupeLine: d && (d.brand + (d.product ? ' · ' + d.product : '')),
+      detailSelf: d && !!d.self, detailTwin: d && !d.self,
+      onShade: () => this.openShade(),
+      dupeDE: d && ('\u0394E ' + d.dE.toFixed(1)), dupeWord: d && this.matchWord(d.dE), dupePrice: d && d.dealPriceStr,
+      dupeDiscontinued: !!(d && d.discontinued),
+      // Rows can now be all out-of-stock, so "the stores below still had stock"
+      // must key off live offers, not off whether any rows exist.
+      dupeDiscontinuedMsg: (d && d.discontinued)
+        ? ((d.allPrices || []).some(p => p.price != null && p.in_stock)
+            ? 'This shade appears to be discontinued. The stores below still had stock when we checked \u2014 it may not last.'
+            : (retailers.length
+                ? 'This shade appears to be discontinued \u2014 every listing we found was already out of stock.'
+                : 'This shade appears to be discontinued \u2014 we couldn\u2019t find it in stock anywhere.'))
+        : '',
+      retailers
+    };
+  }
+}
+</script>
+</body>
+</html>

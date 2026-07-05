@@ -1,0 +1,19 @@
+# Never bake the real API key into the image.
+.env
+
+# Local dev / VCS / OS cruft.
+.venv/
+venv/
+.git/
+.gitignore
+**/__pycache__/
+**/*.pyc
+**/.DS_Store
+
+# Not needed at runtime — the Dockerfile only COPYs src/backend and src/web.
+assets/
+src/research/
+
+# Docker build files themselves; entrypoint.sh is exempted (Dockerfile COPYs it).
+docker/
+!docker/entrypoint.sh

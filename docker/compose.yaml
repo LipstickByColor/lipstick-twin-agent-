@@ -1,0 +1,25 @@
+# One-command run, from the REPO ROOT:
+#
+#   docker compose -f docker/compose.yaml up --build
+#
+# Compose is non-interactive, so it can't prompt for the key the way
+# `docker run -it` does. Put your key in a .env file at the repo root:
+#
+#   GOOGLE_API_KEY=your-key-here
+#
+# The env_file line below loads it into the container. (Get a key at
+# https://aistudio.google.com/apikey.) If you'd rather not use a file, use the
+# interactive `docker run -it` form documented in README.md instead.
+services:
+  app:
+    build:
+      context: ..                 # repo root
+      dockerfile: docker/Dockerfile
+    image: lipstick-twin
+    ports:
+      - "8000:8000"
+    env_file:
+      - ../.env                   # repo-root .env → GOOGLE_API_KEY into the container
+    # Uncomment to keep JSONL run traces after the container stops:
+    # volumes:
+    #   - ../src/research/traces:/app/src/research/traces
