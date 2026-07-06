@@ -1043,9 +1043,13 @@ class Component extends DCLogic {
       .sort((a, b) => a.dealPrice - b.dealPrice)[0];
     // Unknown anchor price → the cheapest verified twin is still the win.
     const hasSavings = best ? (anchorPrice == null || best.dealPrice < anchorPrice) : false;
-    const bestKey = best ? best.brand + best.shade : '';
+    const bestPrice = best ? best.dealPrice : null;
     const dupes = ordered.map(d => {
-      const isBest = hasSavings && (d.brand + d.shade) === bestKey;
+      // Crown by price, not identity: when several cards tie at the cheapest
+      // buyable price, EVERY one is crowned (same policy as the retailer list),
+      // never an arbitrary first-in-sort winner. Sold-out cards (null price)
+      // never match.
+      const isBest = hasSavings && !d.soldOut && d.dealPrice === bestPrice;
       // Cheapest twin gets a 2px border in the same pink as its "cheapest twin" tag.
       // The pink tag bar is driven by pure value bindings (never a display toggle)
       // so it follows the cheapest card across a reorder; non-best cards collapse
