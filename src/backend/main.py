@@ -6,6 +6,7 @@ from the src/backend/ directory, then open http://localhost:8000
 import datetime
 import json
 import logging
+import os
 import time
 from pathlib import Path
 from typing import Literal
@@ -79,6 +80,24 @@ def _outcome_summary(outcome: dict) -> dict:
             for c in outcome.get("all_candidates", []) if c.get("status")
         },
     }
+
+
+@app.on_event("startup")
+async def _seed_cache() -> None:
+    """Replay a saved outcome: SEED_OUTCOME=<path to an *_outcome.json> pre-warms
+    the cache so the identical UI query returns that run's real result instantly
+    (screenshots, video retakes) instead of re-pricing live."""
+    seed = os.environ.get("SEED_OUTCOME")
+    if not seed:
+        return
+    try:
+        data = json.loads(Path(seed).read_text())
+        request = {k: v for k, v in data["request"].items() if k != "client"}
+        key = json.dumps(request, sort_keys=True, default=str)
+        _cache[key] = (time.time(), data["outcome"])
+        logging.info("cache seeded from %s", seed)
+    except Exception as e:
+        logging.warning("SEED_OUTCOME failed (%r) — starting with an empty cache", e)
 
 
 @app.post("/api/find-dupes")
