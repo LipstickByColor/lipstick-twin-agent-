@@ -22,7 +22,7 @@ screen](#a-run-screen-by-screen)).
 | Key concept | Where | What to look at |
 |---|---|---|
 | **Agent / multi-agent system (ADK)** | Code | Two ADK `LlmAgent`s — a search agent with `google_search` ([pipeline.py:267](src/backend/pipeline.py#L267)) and a page-verification agent ([pipeline.py:317](src/backend/pipeline.py#L317)) — sequenced by deterministic Python. Rationale in [Why agents?](#why-agents), design in [Architecture](#architecture). |
-| **MCP server** | Code | The verification agent's only tool is the `fetch` MCP server, run over stdio via ADK's `McpToolset` ([pipeline.py:274](src/backend/pipeline.py#L274)). It loads each candidate product page to confirm brand and shade before a price can win. |
+| **MCP server** | Code | The verification agent's only tool is the `fetch` MCP server, run over stdio via ADK's `McpToolset` ([pipeline.py:274](src/backend/pipeline.py#L274)). It loads each candidate product page to read the brand and shade before a price can win. |
 | **Deployability** | Video + code | The whole system — backend, UI, and MCP fetch server — ships as one Docker container ([docker/](docker/)); build-and-run is two commands ([Run it yourself](#run-it-yourself)) and is shown working in the video. |
 | **Security features** | Code | The API key is never stored in the repo or the image: `.env` is gitignored and the container prompts for the key with hidden input ([entrypoint.sh](docker/entrypoint.sh)). Fetched retailer pages are treated as untrusted input: deterministic verification ([pipeline.py:680](src/backend/pipeline.py#L680)) decides what a page can claim, so page content can't steer the final pick. |
 
@@ -80,8 +80,9 @@ A static database or a conventional scraper can't solve this:
   price? Is "Ruby Woo Retro Matte" the same product as "Ruby Woo"? Is the page
   showing "sold out"? These are language-understanding calls, not regexes.
 - **Verification requires reading pages.** A second agent actually loads each
-  candidate product page (via an MCP fetch tool) and confirms the brand and
-  shade appear on it, turning a search claim into page-verified evidence.
+  candidate product page (via an MCP fetch tool) and reads off the brand and
+  shade it shows. Deterministic code then checks those against the candidate,
+  turning a search claim into page-verified evidence.
 - **Failure needs adaptation.** When a long catalog product name returns
   nothing, the agent is re-run with a shorter brand + shade query. That's the
   kind of adjustment a fixed pipeline can't improvise.
@@ -113,8 +114,9 @@ Two Gemini agents wrapped in deterministic orchestration:
    (ecommerce / blog / other). It is forbidden from stating prices from
    training memory.
 2. **Stage 2: fetch agent** (`gemini-2.5-flash` + MCP `fetch` tool). Loads
-   each offer's product page and verifies the brand and shade actually appear
-   on it.
+   each offer's product page and extracts the brand, shade, price, and stock
+   status shown on it. A deterministic check (`verify_product`) then matches
+   that brand and shade against the candidate.
 
 ```mermaid
 flowchart LR
@@ -267,9 +269,10 @@ the agent confidently return something *wrong* and asking why. A few examples:
   gave me the clean two-stage pipeline the rest of the design leans on.
 - **Killing phantom "best picks."** A trace showed a confident `$8.49 BEST
   PICK` sourced from a Walmart search page for a *different* product. Now the
-  fetch agent re-reads the product page and matches **brand + shade tokens**:
-  a wrong-product price is cleared, so confidence follows verified identity,
-  not "did the fetch succeed."
+  fetch agent re-reads the product page and reports the brand and shade on it,
+  and a deterministic check matches those **brand + shade tokens** against the
+  candidate: a wrong-product price is cleared, so confidence follows verified
+  identity, not "did the fetch succeed."
 - **Stopping the fetch agent from drowning in tokens.** Early traces showed
   ~130k characters of raw CSS and JavaScript per page (`raw=true` plus
   pagination). The instruction now forbids both: one
