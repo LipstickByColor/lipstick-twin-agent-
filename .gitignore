@@ -5,3 +5,4 @@ src/research/traces/
 **/.DS_Store
 __pycache__/
 KAGGLE_WRITEUP.md
+assets/Model_Architecture.html

@@ -102,7 +102,7 @@ combine the built-in `google_search` tool with a function-calling tool like MCP
 
 What stays *deterministic* is everything that should be: ΔE76 color matching,
 retailer exclusions, conflict resolution, and the final "cheapest in-stock
-wins" decision. Agents gather and verify evidence; code makes the call.
+wins" decision. Agents gather evidence; code verifies and decides.
 
 ## Architecture
 
@@ -126,8 +126,10 @@ flowchart LR
         direction LR
         S1["<b>Search agent</b><br/><i>Gemini + google_search</i>"]
         S1 -- "claims" --> FLT["<b>Evidence filters</b><br/><i>trust rules · URLs</i>"]
-        FLT -- "pages worth reading" --> S2["<b>Verify agent</b><br/><i>Gemini + MCP fetch</i>"]
-        S2 -- "page-verified offers" --> CR["<b>Conflict resolution</b><br/><i>dedupe · sanity checks</i>"]
+        FLT -- "pages worth reading" --> S2["<b>Fetch agent</b><br/><i>Gemini + MCP fetch · reads the page</i>"]
+        S2 -- "extracted fields" --> VP["<b>Identity check</b><br/><i>verify_product · brand + shade match</i>"]
+        VP -- "verified offers" --> CR["<b>Conflict resolution</b><br/><i>dedupe · sanity checks</i>"]
+        S1 -. "empty → short query" .-> S1
     end
     CR --> WIN(["Cheapest in-stock<br/>twin wins"])
 
@@ -135,14 +137,16 @@ flowchart LR
     classDef det fill:#dcfce7,stroke:#16a34a,color:#14532d
     classDef outcome fill:#fef3c7,stroke:#d97706,color:#78350f
     class S1,S2 agent
-    class TIE,FLT,CR det
+    class TIE,FLT,VP,CR det
     class WIN outcome
 ```
 
 <sub>**Purple** = the two Gemini agent invocations · **green** = deterministic
-Python. The edge labels are the story: *claims* from search harden into
-*page-verified offers*, and only code makes the final call. The buy link the
-user clicks opens the exact page the verify agent read.</sub>
+Python. The edge labels are the story: *claims* from search become *extracted
+fields* the agent reads off the page, then code (`verify_product`) checks the
+**brand + shade match** and only code makes the final call. Empty results retry
+once with a shorter query. The buy link the user clicks opens the exact page the
+fetch agent read.</sub>
 
 Key design choices:
 
@@ -166,7 +170,7 @@ Key design choices:
   from that repo's `lipstick-utils.js`. The shade you pick is the *anchor*;
   the pipeline prices it plus its 3 closest catalog twins (one per product
   line), capped because each candidate is a paid ~20s agent run. If Supabase is unreachable the UI falls back to
-  four curated, live-verified shades.
+  seven curated, live-verified shades.
 
 ## Demo
 
