@@ -6,6 +6,17 @@ Google**](https://www.kaggle.com/learn-guide/5-day-agents).
 A two-agent Gemini pipeline that takes a lipstick shade, finds its perceptual "twins," and returns live, page-verified prices so the cheapest
 in-stock dupe wins.
 
+Lipstick is just the domain. Under the hood this is a **live
+retrieval-and-verification pipeline** for structured product data:
+
+<p align="center"><sub><b>color match → candidate generation → grounded search → page verification → evidence aggregation → ranking</b></sub></p>
+
+The same pipeline would price shoes, shirts, or furniture.
+
+One real run: a **$50 Chanel** shade resolved to a close-match **NYX twin at
+$13 which is 74% cheaper**, page-verified on Ulta ([see it screen by
+screen](#a-run-screen-by-screen)).
+
 ## Course concepts demonstrated
 
 | Key concept | Where | What to look at |
@@ -19,27 +30,6 @@ The video follows the same arc as this README: [the problem](#the-problem) →
 [why agents](#why-agents) → [architecture](#architecture) → live
 [demo](#demo) → [the build](#the-build).
 
-**TL;DR:**
-
-- **[The problem](#the-problem)** — Buying lipstick by color is broken: shade
-  names tell you nothing, and store filters are too coarse to find a match. My
-  earlier project already solves the color side, so the hard part left is
-  getting a **price you can trust, right now**.
-- **[Why agents?](#why-agents)** — Instead of maintaining a giant catalog that's
-  stale the day it ships, an agent prices just the few shades you asked about,
-  live — including whether each one is still in stock or has been discontinued.
-  And deciding whether a result is real — in stock, the same product, an actual
-  store — is a judgment call that needs a model, not a rule.
-- **[Architecture](#architecture)** — One agent searches the web for offers,
-  a second opens each product page to confirm the brand and shade really match,
-  and plain Python weighs what they find and picks the cheapest in-stock twin.
-- **[Demo](#demo)** — Run it locally, open the page, and pick a shade; you get
-  page-verified prices in a minute or two. Repeat runs are instant thanks to a
-  6-hour cache.
-- **[The build](#the-build)** — Google's Agent Development Kit and an MCP fetch
-  tool, color-distance math over a ~9k-product catalog, a FastAPI backend, and a
-  no-build web UI. It started in a notebook and moved into a real backend.
-
 ## Contents
 
 - [The problem](#the-problem)
@@ -50,51 +40,32 @@ The video follows the same arc as this README: [the problem](#the-problem) →
 - [How I built it](#how-i-built-it)
 - [How well it works](#how-well-it-works)
 - [What I learned](#what-i-learned)
-- [Observability notes](#observability-notes)
 
 ## The problem
 
-Lipstick is a ~$17B market growing to a projected ~$24B by 2030, and shopping
-it by color is broken:
+The same lipstick color can cost $5 at the drugstore or $100+ at the luxury
+counter, yet the question every shopper has:
 
-- **Shade names don't describe colors.** Brands name shades "Velvet Plum,"
-  "Midnight Berry," "Spiced Rosewood" — evocative, but they don't map to a
-  color. Even shades sharing a name ("mauve") are visibly different colors
-  across brands.
-- **Retailer filters are too coarse to help.** Sephora collapses the entire
-  spectrum into 14 color groups, Ulta into 12; one tap on Ulta's "Pink" filter
-  returns **641 products** spanning pale rose to near-red. Amazon and Google
-  Shopping have no color filter at all — you need makeup vocabulary
-  ("terracotta"? "dusty rose"?) before you can even type a search.
-- So the question every shopper actually has, *"is there a cheaper product in
-  this exact color?"*, has no tool. In practice people buy-and-swatch, or
-  trust years-old blog "dupe lists."
+> *"Is there a **cheaper** lipstick in a **similar color**?"*
 
-My previous project, [Lipstick Color Finder](https://github.com/ConstanzaSchibber/lipstick_color_extraction)
-([live app](https://lipstickbycolor.github.io/)), solved the **color half**:
-an ML pipeline that extracts each product's true color as a [CIELAB coordinate](https://lipstickbycolor.github.io/color-guide.html)
-across 9,000+ products, so shades can be compared by measured color difference
-(ΔE) instead of by name. Below ΔE ≈ 2, two shades are literally
-indistinguishable to the human eye: perceptual twins.
+... has no good answer. Shade names ("Velvet Plum," "Midnight Berry") don't
+describe colors, and retailer color filters are too coarse to find a match.
+And even then, prices vary by retailer and products go out of stock.
 
-Solving the color half exposes the **price half**, and that's this project.
-Once you know a $34 MAC shade has a $9 drugstore twin, color is a tie and
-**price is the only tiebreaker that matters** — but getting a price you can
-act on is genuinely hard:
+I solved the color half in a previous project, [Lipstick Color Finder](https://github.com/ConstanzaSchibber/lipstick_color_extraction),
+which measured the true [CIELAB color](https://lipstickbycolor.github.io/color-guide.html)
+of 9,000+ products. That catalog is the front door of this demo: pick a shade
+and instantly see its closest color twins.
 
-- Prices change daily and vary by retailer, and brands discontinue shades all
-  the time. Keeping prices and availability current for 9,000+ products across
-  hundreds of retailers is infeasible — any pre-built price catalog is stale
-  the day it ships.
-- The web is full of *claimed* prices — blog posts, review sites, years-old
-  "dupe lists" — that aren't places you can actually buy the product.
-- Listings go out of stock, retailers hide product pages behind bot-walls and
-  redirect links, and marketplace prices (eBay, third-party sellers) are
-  unreliable.
+**This project solves the price half: get me a price I can trust, right now,
+with a link I can actually buy from.**
 
-So this project's problem isn't "match the color" — that's solved upstream and
-is deterministic math here — it's **"get me a price I can trust, right now,
-with a link I can actually buy from."**
+<p align="center">Chanel <i>Soft Candy</i> — <b>$50</b><br>↓<br>e.l.f. <i>Joyful</i> — <b>$7</b><br>↓<br><b>86% cheaper</b></p>
+
+Finding that price by hand means trawling website after website — and one
+candidate is rarely enough; you want a few similar shades side by side. So the
+app returns several close twins, each with a live, page-verified price and a
+link you can buy from.
 
 ## Why agents?
 
@@ -112,13 +83,12 @@ A static database or a conventional scraper can't solve this:
   candidate product page (via an MCP fetch tool) and confirms the brand and
   shade appear on it — turning a search claim into page-verified evidence.
 - **Failure needs adaptation.** When a long catalog product name returns
-  nothing, the agent is re-run with a reformulated short brand + shade query,
-  a retry a fixed pipeline couldn't compose on its own.
+  nothing, the agent is re-run with a shorter brand + shade query — the kind
+  of adjustment a fixed pipeline can't improvise.
 
-**Why two agents and not one?** The immediate reason is a hard API constraint:
-Gemini 2.5 won't combine the built-in `google_search` tool with a function-calling
-tool like MCP `fetch` in one request. But I'd keep the split even without that
-limit (which was introduced for Gemini 3):
+**Why two agents and not one?** The immediate reason is that Gemini 2.5 won't
+combine the built-in `google_search` tool with a function-calling tool like MCP
+`fetch` in one request (a limit lifted in Gemini 3) — but I'd keep the split anyway:
 
 - **Search returns *claims*; fetch returns *proof*.** They're different jobs
   with different failure modes — search casts wide, fetch commits to one URL —
@@ -146,17 +116,17 @@ Two Gemini agents wrapped in deterministic orchestration:
    on it.
 
 ```mermaid
-flowchart TD
-    U["User picks a shade"] --> TIE["Color match — deterministic<br/>ΔE76 across the ~9k-shade catalog<br/>→ the shade + its closest twins"]
-    TIE --> S1
-    subgraph LOOP["for each candidate twin"]
-        S1["Search agent<br/>Gemini + google_search<br/>surfaces offers with quoted evidence:<br/>snippet · domain · source type"]
-        S1 -- "claims" --> FLT["Evidence filters — deterministic<br/>retailer trust rules · URL resolution"]
-        FLT -- "pages worth reading" --> S2["Verify agent<br/>Gemini + MCP fetch<br/>opens each product page and confirms<br/>brand · shade · price · in stock"]
-        S2 -- "page-verified offers" --> CR["Conflict resolution — deterministic<br/>SKU-aware dedupe ·<br/>quarantine disagreeing prices"]
+flowchart LR
+    U(["User picks<br/>a shade"]) --> TIE["<b>Color match</b><br/><i>ΔE76 · ~9k shades</i>"]
+    TIE -- "closest twins" --> S1
+    subgraph LOOP["&nbsp;for each candidate twin&nbsp;"]
+        direction LR
+        S1["<b>Search agent</b><br/><i>Gemini + google_search</i>"]
+        S1 -- "claims" --> FLT["<b>Evidence filters</b><br/><i>trust rules · URLs</i>"]
+        FLT -- "pages worth reading" --> S2["<b>Verify agent</b><br/><i>Gemini + MCP fetch</i>"]
+        S2 -- "page-verified offers" --> CR["<b>Conflict resolution</b><br/><i>dedupe · sanity checks</i>"]
     end
-    CR --> WIN["Cheapest in-stock twin wins"]
-    WIN --> UI["UI — buy links open the exact<br/>page the verify agent read"]
+    CR --> WIN(["Cheapest in-stock<br/>twin wins"])
 
     classDef agent fill:#ede9fe,stroke:#7c3aed,color:#312e81
     classDef det fill:#dcfce7,stroke:#16a34a,color:#14532d
@@ -167,8 +137,9 @@ flowchart TD
 ```
 
 <sub>**Purple** = the two Gemini agent invocations · **green** = deterministic
-Python. Evidence hardens as it flows: *claims* from search become
-*page-verified offers*, and only code makes decisions.</sub>
+Python. The edge labels are the story: *claims* from search harden into
+*page-verified offers*, and only code makes the final call. The buy link the
+user clicks opens the exact page the verify agent read.</sub>
 
 Key design choices:
 
@@ -189,14 +160,14 @@ Key design choices:
   price check, not crawling at scale.
 - **Live catalog.** ~9k products loaded at startup from the color-finder app's
   Supabase (`lipstick-data` table, publishable key), with ΔE76 matching ported
-  from that repo's `lipstick-utils.js`. The tie set is the anchor plus its 3
-  closest catalog twins (one per product line) — capped because each candidate
-  is a paid ~20s agent run. If Supabase is unreachable the UI falls back to
+  from that repo's `lipstick-utils.js`. The shade you pick is the *anchor*;
+  the pipeline prices it plus its 3 closest catalog twins (one per product
+  line) — capped because each candidate is a paid ~20s agent run. If Supabase is unreachable the UI falls back to
   four curated, live-verified shades.
 
 ## Demo
 
-<p align="center"><sub>The actual run above: <b>Chanel 124 "Soft Candy" ($50)</b> → agents search the web and page-verify each price live → one candidate reads as <i>discontinued</i> and drops out → several twins rank in, cheaper alternatives on top → winner is <b>e.l.f. "Joyful" ($7)</b>, ΔE 4.8, in stock — <b>86% cheaper</b>, with pricier matches listed below it.</sub></p>
+<p align="center"><sub>The run below: <b>Chanel 124 "Soft Candy" ($50)</b> → agents search the web and page-verify each price live → winner is <b>e.l.f. "Joyful" ($7)</b>, in stock — <b>86% cheaper</b>. Along the way one candidate's page says it's <i>discontinued</i>, so it drops out, and pricier matches rank below the winner.</sub></p>
 
 <p align="center">
   <img src="assets/demo_agent_product_finder.gif" width="720" alt="Full run of Find Your Lipstick Twin: pick a shade, the two agents search and page-verify prices live, and the cheapest in-stock twin surfaces first">
@@ -205,10 +176,18 @@ Key design choices:
 
 ### A run, screen by screen
 
+A different run from the GIF above — anchor **Chanel 104**, winner a
+page-verified **$13 NYX** on Ulta:
+
 | | | |
 |:--:|:--:|:--:|
 | <img src="assets/front_end_1_chanel.png" width="240" alt="Landing page"><br>**1 · Drop your shade**<br><sub>The lipstick you're obsessed with.</sub> | <img src="assets/front_end_2_chanel.png" width="240" alt="Brand and shade picker"><br>**2 · Brand + exact shade**<br><sub>Chanel 104 · matte-only or any format.</sub> | <img src="assets/front_end_3_chanel.png" width="240" alt="Live search progress"><br>**3 · The agent works live**<br><sub>Searches the web, reads real pages · ~1–2 min.</sub> |
-| <img src="assets/front_end_4_chanel.png" width="240" alt="Ranked results"><br>**4 · Ranked by price**<br><sub>Closest matches, cheapest in-stock twin first.</sub> | <img src="assets/front_end_5_chanel.png" width="240" alt="Twin detail with buy link"><br>**5 · Twin detail + buy**<br><sub>ΔE 3.5 match, live price, tap through to the store.</sub> | <img src="assets/front_end_6_to_results.png" width="240" alt="Ulta product page for the verified NYX twin at $13.00"><br>**6 · Buy on the real store**<br><sub>The verified page the fetch agent read — $13 NYX on Ulta.</sub> |
+| <img src="assets/front_end_4_chanel.png" width="240" alt="Ranked results"><br>**4 · Ranked by price**<br><sub>Closest matches, cheapest in-stock twin first.</sub> | <img src="assets/front_end_5_chanel.png" width="240" alt="Twin detail with buy link"><br>**5 · Twin detail + buy**<br><sub>Close match, live price, tap through to the store.</sub> | <img src="assets/front_end_6_to_results.png" width="240" alt="Ulta product page for the verified NYX twin at $13.00"><br>**6 · Buy on the real store**<br><sub>The verified page the fetch agent read — $13 NYX on Ulta.</sub> |
+
+<sub>About the badges in the screenshots: every candidate is classified by its
+measured color distance to your shade, then labeled with a friendly name
+instead of a number: **identical twin**, **separated at birth**, **fraternal
+twin**, or **doppelgänger**, from closest to furthest.</sub>
 
 ### Run it yourself
 
@@ -260,11 +239,11 @@ cloudflared tunnel --url http://localhost:8000   # or: ngrok http 8000
 |---|---|
 | Agents | Two `LlmAgent`s on **Google ADK**, model `gemini-2.5-flash`, run via `InMemoryRunner` |
 | Tools | ADK built-in `google_search` (grounded search); **MCP** `fetch` server over stdio for page verification |
-| Orchestration | Plain Python (`src/backend/pipeline.py`): tie-set loop, retries, URL resolution, conflict resolution, winner pick |
+| Orchestration | Plain Python (`src/backend/pipeline.py`): candidate loop, retries, URL resolution, conflict resolution, winner pick |
 | Color matching | ΔE76 in Python, ported from the color-finder app's `lipstick-utils.js`; catalog from **Supabase** (~9k rows) |
-| Backend | **FastAPI** + uvicorn (`src/backend/main.py`): one long `POST /api/find-dupes`, 6h in-process cache, static-hosts the UI |
+| Backend | **FastAPI** + uvicorn (`src/backend/main.py`): a single long-running `POST /api/find-dupes` request, 6h in-process cache, static-hosts the UI |
 | Frontend | Self-contained `.dc.html` components + vanilla JS — no build step |
-| Observability | Per-candidate JSONL agent traces + full run outcomes in `src/research/traces/`; usage/UI events in `usage.jsonl` |
+| Observability | Per-candidate JSONL agent traces + full run outcomes in `src/research/traces/`; usage/UI events in `usage.jsonl` ([details](ARCHITECTURE.md#observability)) |
 | Process | Prototyped in a Jupyter notebook (`src/research/agent_dupe_price_finder.ipynb`), then extracted into the pipeline module |
 
 For the repo layout and how a request flows through it, see
@@ -278,52 +257,38 @@ into a FastAPI backend and continued the same loop — run, read the trace, fix 
 now against real testers. Almost every design decision below came from watching
 the agent confidently return something *wrong* and asking why. A few examples:
 
-- **The two-agent split was forced, then became the point.** My first version
-  used ADK's built-in `google_search` and the MCP `fetch` tool in one agent —
-  Gemini rejects that (`INVALID_ARGUMENT: Built-in tools and Function Calling
-  cannot be combined`). Splitting into a search agent and a fetch agent
-  coordinated by Python fixed it *and* gave me the clean two-stage pipeline the
-  rest of the design leans on.
-- **Killing phantom "best picks."** A trace showed a confident
-  `$8.49 BEST PICK` for a NYX shade — sourced from a Walmart marketplace/search
-  page for a *different* product, stamped `confidence: high` just because a page
-  loaded. So the fetch agent now re-reads the actual product page and matches
-  **brand + shade tokens**; a wrong-brand or wrong-shade page has its price
-  cleared and can never win. Confidence follows verified identity, not "did the
-  fetch succeed."
-- **Stopping the fetch agent from drowning in tokens.** Early traces showed the
-  fetch agent pulling ~130k characters of raw CSS and JavaScript per page — it
-  was calling `fetch` with `raw=true` and paginating through `start_index`,
-  burning tokens on markup to find one price. The instruction now forbids both
-  and directs a single `fetch(url, max_length=20000)` on the simplified text,
-  returning structured `{title, brand, shade, price, in_stock}` — far cheaper
-  per call, and it hands `verify_product` clean identity fields instead of noise.
-- **Not deduping away a legitimately cheaper version.** One trace, two bugs:
-  the $16 MAC Ruby Woo travel mini and the $25 full size at the same retailer
-  were being collapsed into one "duplicate" — distinct SKUs, not a repeated
-  price — and even separated, a null-price snippet sorted ahead of the mini in
-  its group. So conflict resolution now groups fetch-verified offers by URL
-  path (the SKU) *before* dedup, and ranking became
-  `(has_price, url_quality, confidence)`, so the cheaper real option survives
-  and can win. I found both only by diffing an `_outcome.json` against what the
-  retailer page actually showed.
-- **Excluding retailers I learned to distrust — then letting Walmart back in by
-  page type.** Target and Walmart repeatedly produced believable-but-wrong prices
-  (unrelated shades on search/browse pages, B2B `business.walmart.com` SKUs), so I
-  dropped them early. But a blanket Walmart ban was too blunt: it also discarded a
-  legitimate in-stock L'Oréal at **$15.94** (a run recommended a $20.00 shade
-  instead) whose only fault was the model returning `url: null` — the real
-  `walmart.com/ip/…` link was resolvable from the grounding chunk. Now consumer
-  Walmart is gated on *page type* instead of domain: a resolved `walmart.com/ip/…`
-  product page is kept and always fetch-verified; search/browse pages and the B2B
-  storefront are still dropped early, before they consume a fetch call.
+- **The two-agent split was forced, then became the point.** Gemini rejects
+  combining built-in `google_search` with the MCP `fetch` tool in one agent
+  (`INVALID_ARGUMENT`). Splitting them, coordinated by Python, fixed it *and*
+  gave me the clean two-stage pipeline the rest of the design leans on.
+- **Killing phantom "best picks."** A trace showed a confident `$8.49 BEST
+  PICK` sourced from a Walmart search page for a *different* product. Now the
+  fetch agent re-reads the product page and matches **brand + shade tokens** —
+  a wrong-product price is cleared, so confidence follows verified identity,
+  not "did the fetch succeed."
+- **Stopping the fetch agent from drowning in tokens.** Early traces showed
+  ~130k characters of raw CSS and JavaScript per page (`raw=true` plus
+  pagination). The instruction now forbids both: one
+  `fetch(url, max_length=20000)` on the simplified text, returning structured
+  `{title, brand, shade, price, in_stock}`.
+- **Not deduping away a legitimately cheaper version.** The $16 Ruby Woo
+  travel mini and the $25 full size were collapsed as "duplicates," and a
+  null-price snippet outranked the mini. Conflict resolution now groups offers
+  by URL path (the SKU) *before* dedup and ranks by
+  `(has_price, url_quality, confidence)`, so the cheaper real option can win.
+- **Excluding retailers I learned to distrust — then letting Walmart back in
+  by page type.** Target and Walmart kept producing believable-but-wrong
+  prices, but a blanket ban also discarded a legitimate in-stock L'Oréal at
+  **$15.94**. Now a resolved `walmart.com/ip/…` product page is kept and
+  always fetch-verified; search/browse pages and the B2B storefront are
+  dropped before they consume a fetch call.
 
 An `/ip/` URL isn't an airtight guarantee either — Walmart sometimes serves a
 listing of several products under a single `walmart.com/ip/…` link that the page-type
-gate waves through. The quarantine rule is the backstop for exactly that. In the
+gate waves through. The quarantine rule — when one store reports several
+conflicting prices for one product, drop them all — is the backstop for exactly that. In the
 Chanel run dissected [below](#a-query-end-to-end), one such Dior "product" page
-yielded four different prices — different items on the listing, none confirmed
-to be the shade being priced:
+yielded four different prices: different items on the listing, none confirmed to be the shade being priced:
 
 ```jsonc
 // all four tagged to ONE URL — walmart.com/ip/Dior-Addict-Lip-Tint/1401958943 —
@@ -342,14 +307,16 @@ locked in rather than re-discovered.
 
 ## How well it works
 
-Numbers below come straight from the run traces in `src/research/traces/` —
-**19 live queries** covering **79 candidate twins** and **167 offers** the search
-agent surfaced, plus their `usage.jsonl` timings. It's a development sample, not a
-benchmark, but it shows the pipeline doing the job it's built for.
+**Across 19 real queries, verification rejected 13 incorrect prices that would
+otherwise have ranked** — roughly 1 in 9 prices the search agent returned was
+wrong, and opening the page is what caught them. All numbers below come straight
+from the run traces in `src/research/traces/` (19 live queries, 79 candidate
+twins, 167 offers) — a development sample, not a benchmark.
 
 ### A query, end to end
 
-One real run — anchor **Chanel 124 "Soft Candy"** ($50 matte), 7 closest twins:
+One real run — anchor **Chanel 124 "Soft Candy"** ($50 matte), 7 closest twins
+*(traced before the candidate cap dropped to today's 4)*:
 
 ```
 7 color twins  →  19 offers surfaced by the search agent
@@ -357,7 +324,7 @@ One real run — anchor **Chanel 124 "Soft Candy"** ($50 matte), 7 closest twins
                                             not Soft Candy — wrong product)
                →  resolution quarantines 4 (the four-price Dior listing shown
                                             in full in "How I built it")
-                  + parks 1 discontinued sentinel
+                  + sets aside 1 whose page says discontinued
                →  14 offers kept, 10 with a live price
                →  cheapest in-stock twin:  e.l.f. "Joyful"  $7.00 @ walmart.com  (ΔE 4.8)
 ```
@@ -367,9 +334,7 @@ opens the actual product page.
 
 ### Verification earns its place
 
-Across all 19 runs the search agent surfaced 116 offers carrying a price.
-Verification and deterministic resolution overturned **13 of them (~1 in 9)**
-before they could be ranked:
+Where those 13 rejections came from (out of 116 offers carrying a price):
 
 - **3 were the wrong product**, caught only because the fetch agent opened the
   page — e.g. for L'Oréal "Caramel Latte 799", Ulta's confidently-returned page
@@ -407,10 +372,6 @@ up front, before a run's outcome file is even written, so they never reach this 
   8 of 27 calls were cache hits — those were re-running the same shade while
   capturing screenshots, which is exactly what the cache is for.
 
-*(Retry frequency isn't reported here: the empty-result retry only logs to stderr
-and isn't persisted in the traces, so there's no honest number to quote without
-adding a counter.)*
-
 ## What I learned
 
 A few things that will carry to the next agent I build:
@@ -440,34 +401,11 @@ A few things that will carry to the next agent I build:
   reading a trace. Once each run recorded exactly what it searched, fetched,
   verified, and dropped, iteration happened fast.
 - **Accuracy and latency pull against each other.** Almost every reliability
-  lever also costs wall-clock time: more candidates in the tie set, a retry on
-  empty results, sequential (not concurrent) fetches to avoid bot-walls, a
-  second agent that opens each page. Each one makes the answer better and makes
-  the user wait longer — and a live query is already 1–2 minutes, with every
-  extra fetch adding ~20s. The usage log made the cost concrete: testers who
-  waited too long churned (`abandoned_wait` / `left_during_wait`). So the caps
-  aren't just budget decisions — the tie set is 4, retry runs once, and the
-  6-hour cache exists — they're deliberate bets on how much correctness is worth
-  how much patience.
-- **"Agentic" isn't autonomous agents chatting.** This isn't two agents
-  negotiating with each other. It's two specialized, single-purpose LLM
-  invocations sequenced by Python. Framing it that way kept it debuggable: the
-  interesting engineering lives in the orchestration and the evidence handling,
-  not in handing the model more autonomy.
-
-## Observability notes
-
-- Per-candidate agent traces land in `src/research/traces/*.jsonl`; each fresh run
-  also saves its full result (every price, URL, and page title) as
-  `src/research/traces/*_outcome.json`.
-- Usage is logged to `src/research/traces/usage.jsonl`: one line per run (what the
-  user typed, the anchor they picked, cache hit/miss, duration, winner, prices
-  found per candidate) plus UI events — `search_no_match` (queries that found
-  nothing in the catalog), `results_shown` (with the user's real `wait_s`),
-  `open_twin`, `buy_click`, `download_txt`, `abandoned_wait` /
-  `left_during_wait` (with how long they waited before bailing), and
-  `run_failed_client`. Every event carries an anonymous per-browser `sid` so
-  one tester's events read as a single journey.
+  lever — more candidates, retries, sequential fetches, a second agent opening
+  each page — makes the answer better and the user wait longer. The usage log
+  made the cost concrete: testers who waited too long churned (`abandoned_wait`
+  / `left_during_wait`). So the caps (4 candidates, one retry, the 6-hour cache)
+  are deliberate bets on how much correctness is worth how much patience.
 
 ## License
 

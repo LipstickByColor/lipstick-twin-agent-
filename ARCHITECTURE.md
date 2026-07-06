@@ -16,7 +16,7 @@ covers *where things live* and *how a request flows through them*.
 ├── src/                 all application code
 │   ├── backend/         FastAPI service + the two-agent pipeline
 │   │   ├── main.py         request validation, 6h cache, usage logging, static host
-│   │   └── pipeline.py     tie-set loop, search→verify→resolve, ΔE math, ranker, traces
+│   │   └── pipeline.py     candidate loop, search→verify→resolve, ΔE math, ranker, traces
 │   ├── web/             no-build single-page UI
 │   │   ├── Find Your Lipstick Twin.dc.html   the whole app
 │   │   ├── Lipstick.dc.html                  standalone lipstick-tube component
@@ -79,6 +79,20 @@ Deterministic Python owns retries, filtering, dedup, conflict resolution,
 ranking, caching, and the final cheapest-price call; the two LLM agents only
 gather and verify evidence. See the [README](README.md#architecture) for the
 reasoning behind that split.
+
+## Observability
+
+- Per-candidate agent traces land in `src/research/traces/*.jsonl`; each fresh
+  run also saves its full result (every price, URL, and page title) as
+  `src/research/traces/*_outcome.json`.
+- Usage is logged to `src/research/traces/usage.jsonl`: one line per run (what
+  the user typed, the anchor they picked, cache hit/miss, duration, winner,
+  prices found per candidate) plus UI events — `search_no_match` (queries that
+  found nothing in the catalog), `results_shown` (with the user's real
+  `wait_s`), `open_twin`, `buy_click`, `download_txt`, `abandoned_wait` /
+  `left_during_wait` (with how long they waited before bailing), and
+  `run_failed_client`. Every event carries an anonymous per-browser `sid` so
+  one tester's events read as a single journey.
 
 ## Configuration
 
