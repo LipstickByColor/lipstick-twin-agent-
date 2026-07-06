@@ -168,7 +168,10 @@ Key design choices:
 
 ## Demo
 
-<p align="center"><sub>The run below: <b>Chanel 124 "Soft Candy" ($50)</b> → agents search the web and page-verify each price live → winner is <b>e.l.f. "Joyful" ($7)</b>, in stock and <b>86% cheaper</b>. Along the way one candidate's page says it's <i>discontinued</i>, so it drops out, and pricier matches rank below the winner.</sub></p>
+The run below: **Chanel 124 "Soft Candy" ($50)** → agents search the web and
+page-verify each price live → winner is **e.l.f. "Joyful" ($7)**, in stock and
+**86% cheaper**. Along the way one candidate's page says it's *discontinued*,
+so it drops out, and pricier matches rank below the winner.
 
 <p align="center">
   <img src="assets/demo_agent_product_finder.gif" width="720" alt="Full run of Find Your Lipstick Twin: pick a shade, the two agents search and page-verify prices live, and the cheapest in-stock twin surfaces first">
@@ -182,8 +185,8 @@ page-verified **$13 NYX** winner on Ulta:
 
 | | | |
 |:--:|:--:|:--:|
-| <img src="assets/front_end_1_chanel.png" width="240" alt="Landing page"><br>**1 · Drop your shade**<br><sub>The lipstick you're obsessed with.</sub> | <img src="assets/front_end_2_chanel.png" width="240" alt="Brand and shade picker"><br>**2 · Brand + exact shade**<br><sub>Chanel 104 · matte-only or any format.</sub> | <img src="assets/front_end_3_chanel.png" width="240" alt="Live search progress"><br>**3 · The agent works live**<br><sub>Searches the web, reads real pages · ~1–2 min.</sub> |
-| <img src="assets/front_end_4_chanel.png" width="240" alt="Ranked results"><br>**4 · Ranked by price**<br><sub>Closest matches, cheapest in-stock twin first.</sub> | <img src="assets/front_end_5_chanel.png" width="240" alt="Twin detail with buy link"><br>**5 · Twin detail + buy**<br><sub>Close match, live price, tap through to the store.</sub> | <img src="assets/front_end_6_to_results.png" width="240" alt="Ulta product page for the verified NYX twin at $13.00"><br>**6 · Buy on the real store**<br><sub>The verified page the fetch agent read: $13 NYX on Ulta.</sub> |
+| **1 · Drop your shade**<br><sub>The lipstick you're obsessed with.</sub><br><img src="assets/front_end_1_chanel.png" width="240" alt="Landing page"> | **2 · Brand + exact shade**<br><sub>Chanel 104 · matte-only or any format.</sub><br><img src="assets/front_end_2_chanel.png" width="240" alt="Brand and shade picker"> | **3 · The agent works live**<br><sub>Searches the web, reads real pages · ~1–2 min.</sub><br><img src="assets/front_end_3_chanel.png" width="240" alt="Live search progress"> |
+| **4 · Ranked by price**<br><sub>Closest matches, cheapest in-stock twin first.</sub><br><img src="assets/front_end_4_chanel.png" width="240" alt="Ranked results"> | **5 · Twin detail + buy**<br><sub>Close match, live price, tap through to the store.</sub><br><img src="assets/front_end_5_chanel.png" width="240" alt="Twin detail with buy link"> | **6 · Buy on the real store**<br><sub>The verified page the fetch agent read: $13 NYX on Ulta.</sub><br><img src="assets/front_end_6_to_results.png" width="240" alt="Ulta product page for the verified NYX twin at $13.00"> |
 
 <sub>About the badges in the screenshots: every candidate is classified by its
 measured color distance to your shade, then labeled with a friendly name
@@ -334,7 +337,7 @@ One real run: anchor **Chanel 124 "Soft Candy"** ($50 matte), 7 closest twins
 A $50 Chanel resolved to a page-verified **$7 dupe, 86% cheaper**, on a link
 that opens the actual product page.
 
-### Verification earns its place
+### What verification caught
 
 Where those 13 rejections came from (out of 116 offers carrying a price):
 
