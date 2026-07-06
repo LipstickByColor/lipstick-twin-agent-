@@ -1030,11 +1030,17 @@ class Component extends DCLogic {
       ? [...twins, ...near].sort((a, b) => a.dE - b.dE)
       : [...twins, ...near];
     const ordered = [...live, ...soldOut];
-    // Cheapest buyable match: prefer the cheapest true twin, else the cheapest
-    // near-match. Both `twins` and `near` are price-sorted above, so `best` (and
-    // thus the savings banner + crown) is independent of the display sort —
-    // reordering by color must NOT change what counts as the cheapest.
-    const best = twins[0] || near[0];
+    // Cheapest buyable match across ALL results — twins and near-matches alike.
+    // We must compare the whole buyable set, not just twins: a near-match can
+    // undercut every true twin (e.g. a $6.79 near vs a $25 twin), and crowning
+    // the pricier twin would make the "already cheapest" banner lie about a
+    // cheaper card sitting right below it. Both `twins` and `near` are
+    // price-sorted above, so `best` (and thus the savings banner + crown) is
+    // independent of the display sort — reordering by color must NOT change
+    // what counts as the cheapest.
+    const best = [twins[0], near[0]]
+      .filter(Boolean)
+      .sort((a, b) => a.dealPrice - b.dealPrice)[0];
     // Unknown anchor price → the cheapest verified twin is still the win.
     const hasSavings = best ? (anchorPrice == null || best.dealPrice < anchorPrice) : false;
     const bestKey = best ? best.brand + best.shade : '';
