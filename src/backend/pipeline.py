@@ -9,12 +9,14 @@ import json
 import logging
 import re
 import sys
+import time
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
+import httpx
 from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
@@ -192,21 +194,32 @@ def _recover_blocked_url(url: str) -> str:
     return url
 
 
-def resolve_vertex_link(url: str, timeout: int = 5) -> str | None:
-    """Follow a Vertex grounding redirect and return the final destination URL."""
+def resolve_vertex_link(url: str, timeout: int = 5, attempts: int = 3) -> str | None:
+    """Follow a Vertex grounding redirect and return the final destination URL.
+
+    The redirect service 403s under burst load and recovers on a short-backoff
+    retry — losing the link loses the retailer, and it's disproportionately the
+    major retailers (ulta, sephora, macys) that arrive as redirects rather than
+    direct URLs. A 404 is a model-mangled token that no retry can fix, so it
+    fails immediately."""
     req = urllib.request.Request(
         url,
         headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"},
     )
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return _recover_blocked_url(resp.url)
-    except urllib.error.HTTPError as e:
-        log.warning(f"    vertex redirect HTTP {e.code}: {e.reason}")
-        return None
-    except Exception as e:
-        log.warning(f"    vertex redirect error: {type(e).__name__}: {e}")
-        return None
+    for i in range(attempts):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                return _recover_blocked_url(resp.url)
+        except urllib.error.HTTPError as e:
+            if e.code == 404 or i == attempts - 1:
+                log.warning(f"    vertex redirect HTTP {e.code}: {e.reason}")
+                return None
+        except Exception as e:
+            if i == attempts - 1:
+                log.warning(f"    vertex redirect error: {type(e).__name__}: {e}")
+                return None
+        time.sleep(1 + i)  # runs in a worker thread, never on the event loop
+    return None
 
 
 # ── Agents ────────────────────────────────────────────────────────────────────
@@ -413,6 +426,22 @@ _EXCLUDED_RETAILERS = {"target.com", "target", "ulta beauty at target", "ebay"}
 _EXCLUDED_DOMAINS = {"business.walmart.com", "ebay.com"}
 
 
+def _retailer_key(s: str | None) -> str:
+    """Loose retailer identity: 'Ulta Beauty' ~ 'ulta.com' ~ 'ulta' ~ 'm.ulta.com'.
+
+    Lowercase, strip www/m prefixes and everything from a common TLD on, then
+    drop non-alphanumerics ('e.l.f. cosmetics' → 'elfcosmetics')."""
+    s = (s or "").lower().strip()
+    s = re.sub(r"^(www|m)\.", "", s)
+    s = re.sub(r"\.(com|net|org|shop|store|co|us|uk|ca|kr|fr|de)\b.*$", "", s)
+    return re.sub(r"[^a-z0-9]", "", s)
+
+
+def _same_retailer(a: str | None, b: str | None) -> bool:
+    ka, kb = _retailer_key(a), _retailer_key(b)
+    return bool(ka) and bool(kb) and (ka in kb or kb in ka)
+
+
 def _is_excluded(p: dict) -> bool:
     """True if this price entry belongs to an excluded retailer (by name or URL host)."""
     retailer = (p.get("retailer") or "").lower()
@@ -444,25 +473,45 @@ def _walmart_is_pdp(p: dict) -> bool:
 
 _FETCH_TIMEOUT_S = 45  # max seconds to wait for one MCP fetch call
 
+# At most this many vertex-redirect resolutions in flight across ALL candidates:
+# the redirect service rate-limits bursts with 403s, and each 403 costs a
+# retailer link (see resolve_vertex_link).
+_VERTEX_RESOLVE_SEM = asyncio.Semaphore(3)
+
+# Gemini's front end closes idle keep-alive connections, and httpx reusing a
+# dead socket surfaces as "Server disconnected without sending a response".
+# These are transport faults, not model errors: one retry on a fresh
+# connection succeeds, and re-running one agent turn costs far less than
+# losing the whole tie-set run that contains it.
+_TRANSIENT_HTTP_ERRORS = (httpx.RemoteProtocolError, httpx.ConnectError, httpx.ReadError)
+
 
 async def _run_agent(agent, message: str, tracer: RunTracer) -> str:
     """Run one agent turn, record events to tracer, return full text response."""
-    runner  = InMemoryRunner(agent=agent, app_name="price_finder")
-    session = await runner.session_service.create_session(
-        app_name="price_finder", user_id="u1"
-    )
-    text = ""
-    async for event in runner.run_async(
-        user_id="u1",
-        session_id=session.id,
-        new_message=types.Content(role="user", parts=[types.Part(text=message)]),
-    ):
-        tracer.record(event)
-        if event.content and event.content.parts:
-            for part in event.content.parts:
-                if part.text:
-                    text += part.text
-    return text
+    async def _attempt() -> str:
+        runner  = InMemoryRunner(agent=agent, app_name="price_finder")
+        session = await runner.session_service.create_session(
+            app_name="price_finder", user_id="u1"
+        )
+        text = ""
+        async for event in runner.run_async(
+            user_id="u1",
+            session_id=session.id,
+            new_message=types.Content(role="user", parts=[types.Part(text=message)]),
+        ):
+            tracer.record(event)
+            if event.content and event.content.parts:
+                for part in event.content.parts:
+                    if part.text:
+                        text += part.text
+        return text
+
+    try:
+        return await _attempt()
+    except _TRANSIENT_HTTP_ERRORS as e:
+        log.warning(f"    transient connection error — retrying turn: {e}")
+        await asyncio.sleep(2)
+        return await _attempt()
 
 
 def _parse_list(text: str) -> list[dict]:
@@ -677,6 +726,20 @@ def _norm(s: str | None) -> str:
     return re.sub(r"\s+", " ", _PUNCT_RE.sub(" ", (s or "").lower())).strip()
 
 
+# Words that mark a listing as a multi-product bundle rather than the single
+# shade being priced — "MAC Ultimate Trick Mini Lipstick Set USD $171 Value"
+# is a 12-piece gift set whose marketing *value* is $171, not a $26 lipstick.
+# "mini" is deliberately absent: a travel mini of the same shade is fine.
+_MULTI_ITEM_RE = re.compile(
+    r"\b(set|sets|kit|kits|duo|trio|quad|bundle|bundles|collection|vault|palette|gift)\b"
+    r"|\bvalue\b"
+)
+
+
+def _is_multi_item_title(title: str | None) -> bool:
+    return bool(_MULTI_ITEM_RE.search(_norm(title)))
+
+
 def verify_product(candidate: dict, fetched: dict) -> tuple[str, str]:
     """
     Confirm a fetched page is the SAME brand + shade as the candidate.
@@ -695,11 +758,25 @@ def verify_product(candidate: dict, fetched: dict) -> tuple[str, str]:
     if not hay:
         return "low", "no page identity to verify"
 
+    # A bundle page can legitimately contain the brand and shade tokens and
+    # still be the wrong product to price — reject before the token match.
+    if _is_multi_item_title(title):
+        return "reject", f"multi-item listing, not a single shade (page: {title[:50]!r})"
+
     brand = _norm(candidate.get("brand"))
     shade = _norm(candidate.get("shade"))
     hay_tokens = set(hay.split())
 
-    brand_ok = bool(brand) and (brand in hay or brand.replace(" ", "") in hay.replace(" ", ""))
+    # Catalog brands carry corporate suffixes pages drop ('mac cosmetics' vs a
+    # page titled 'MAC Trick Lipstick') — also accept the brand with those
+    # suffixes stripped, as a phrase, so real pages aren't false-rejected.
+    brand_core = re.sub(r"\b(cosmetics|beauty|makeup|professional|labs)\b", " ", brand)
+    brand_core = re.sub(r"\s+", " ", brand_core).strip()
+
+    def _phrase_in(needle: str) -> bool:
+        return bool(needle) and (needle in hay or needle.replace(" ", "") in hay.replace(" ", ""))
+
+    brand_ok = _phrase_in(brand) or _phrase_in(brand_core)
     shade_ok = bool(shade) and all(tok in hay_tokens for tok in shade.split())
 
     if brand_ok and shade_ok:
@@ -803,12 +880,16 @@ async def price_one_candidate(candidate: dict, country: str = "US") -> dict:
     # below, and the UI's Google Shopping "find" fallback built from
     # product_title/brand+shade).
     async def _resolve_vertex_entries() -> None:
-        # urlopen is blocking — run resolutions in threads (concurrently) so the
-        # event loop stays free for other requests while redirects resolve.
+        # urlopen is blocking — run resolutions in threads so the event loop
+        # stays free, but only a few at a time (shared across candidates): a
+        # full burst is what trips the redirect service's 403 rate limit.
         entries = [e for e in prices if classify_url(e.get("url")) == "vertex_link"]
-        results = await asyncio.gather(
-            *(asyncio.to_thread(resolve_vertex_link, e["url"]) for e in entries)
-        )
+
+        async def _res(e: dict) -> str | None:
+            async with _VERTEX_RESOLVE_SEM:
+                return await asyncio.to_thread(resolve_vertex_link, e["url"])
+
+        results = await asyncio.gather(*(_res(e) for e in entries))
         for entry, resolved in zip(entries, results):
             entry["url"] = resolved
             if not resolved:
@@ -847,6 +928,15 @@ async def price_one_candidate(candidate: dict, country: str = "US") -> dict:
                     url = await asyncio.to_thread(resolve_vertex_link, url)
                     if not url:  # dead redirect — try the next entry instead
                         continue
+                # The model often ignores "one entry for {retailer}" and returns
+                # whatever it found — stapling a stranger's URL onto this entry
+                # mislabels the link AND the snippet price next to it. The URL
+                # host is what the user clicks, so it alone decides (the model's
+                # own retailer label often parrots the one we asked for).
+                host = urlparse(url).netloc
+                if not _same_retailer(host, retailer):
+                    log.info(f"    targeted search returned {host!r} for {retailer} — skipped")
+                    continue
                 entry["url"] = url
                 if entry.get("price") is None and tp.get("price") is not None:
                     entry["price"]      = tp["price"]
@@ -868,6 +958,20 @@ async def price_one_candidate(candidate: dict, country: str = "US") -> dict:
             continue
         walmart_kept.append(p)
     prices = walmart_kept
+
+    # A snippet titled like a bundle is pricing a different product — a gift
+    # set's marketing "value", not this shade. Void the snippet price (a voided
+    # entry never reaches optimize() or the UI); entries that kept a URL fall
+    # into the Stage 2 fetch below, where the page itself can re-price them and
+    # verify_product has the final say.
+    for p in prices:
+        if p.get("price") is not None and "status" not in p \
+                and _is_multi_item_title(p.get("product_title")):
+            log.info(f"    {p.get('retailer', '?')}: multi-item title — snippet price "
+                     f"${p['price']} voided ({(p.get('product_title') or '')[:60]!r})")
+            p["price"] = None
+            p["confidence"] = "low"
+            p["_verify"] = "multi-item title — snippet price voided"
 
     # ── Stage 2: fetch to get missing prices + verify uncertain ones ──────────
     # Walmart product pages are always fetched, even at high confidence: Walmart's
@@ -964,7 +1068,14 @@ async def run_tie_set(
     async def _one(c: dict) -> dict:
         async with sem:
             log.info(f"  → {c['brand']} / {c['shade']}")
-            return await price_one_candidate(c, country)
+            try:
+                return await price_one_candidate(c, country)
+            except Exception as e:
+                # One candidate dying must not cancel the gather: that voids the
+                # other candidates' already-paid searches and 500s the request.
+                # An error candidate renders like any 0-price result in the UI.
+                log.error(f"    {c['brand']} / {c['shade']} failed: {e!r}")
+                return {**c, "prices": [], "price_conflicts": [], "status": "error"}
 
     priced = list(await asyncio.gather(*(_one(c) for c in tie_set)))
     for result in priced:

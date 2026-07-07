@@ -20,6 +20,9 @@ services:
       - "8000:8000"
     env_file:
       - ../.env                   # repo-root .env → GOOGLE_API_KEY into the container
-    # Uncomment to keep JSONL run traces after the container stops:
-    # volumes:
-    #   - ../src/research/traces:/app/src/research/traces
+    environment:
+      # Pre-warm the outcome cache from saved traces so demo searches replay
+      # instantly (and survive rebuilds) instead of re-pricing live.
+      - SEED_OUTCOME=/app/src/research/traces
+    volumes:
+      - ../src/research/traces:/app/src/research/traces

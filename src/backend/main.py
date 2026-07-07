@@ -3,6 +3,7 @@
 Run:  ~/.pyenv/versions/3.11.9/bin/python -m uvicorn main:app --port 8000
 from the src/backend/ directory, then open http://localhost:8000
 """
+import asyncio
 import datetime
 import json
 import logging
@@ -62,6 +63,10 @@ class DupeRequest(BaseModel):
 # video retakes) are instant and free.
 _CACHE_TTL_S = 6 * 3600
 _cache: dict[str, tuple[float, dict]] = {}
+# One in-flight pricing task per cache key: a retry (or a second tab) arriving
+# while the same tie set is still being priced awaits the existing run instead
+# of paying for a duplicate one.
+_inflight: dict[str, asyncio.Task] = {}
 
 
 def _outcome_summary(outcome: dict) -> dict:
@@ -84,20 +89,50 @@ def _outcome_summary(outcome: dict) -> dict:
 
 @app.on_event("startup")
 async def _seed_cache() -> None:
-    """Replay a saved outcome: SEED_OUTCOME=<path to an *_outcome.json> pre-warms
-    the cache so the identical UI query returns that run's real result instantly
-    (screenshots, video retakes) instead of re-pricing live."""
+    """Replay saved outcomes: SEED_OUTCOME=<path> pre-warms the cache so the
+    identical UI query returns that run's real result instantly (screenshots,
+    video retakes) instead of re-pricing live. The path is one *_outcome.json
+    or a directory of them — seeded in name order, so a curated seed_*.json
+    overrides the raw trace of the same run (it sorts after the timestamps)."""
     seed = os.environ.get("SEED_OUTCOME")
     if not seed:
         return
+    files = sorted(Path(seed).glob("*outcome*.json")) if Path(seed).is_dir() else [Path(seed)]
+    for f in files:
+        try:
+            data = json.loads(f.read_text())
+            request = {k: v for k, v in data["request"].items() if k != "client"}
+            key = json.dumps(request, sort_keys=True, default=str)
+            _cache[key] = (time.time(), data["outcome"])
+            logging.info("cache seeded from %s", f)
+        except Exception as e:
+            logging.warning("SEED_OUTCOME: skipped %s (%r)", f, e)
+
+
+async def _price_and_cache(key: str, request_dump: dict, tie_set: list[dict],
+                           country: str, strategy: str) -> tuple[dict, str | None]:
+    """Run the pipeline, cache the outcome, persist it as a trace file.
+
+    Runs as its own task, shared by every request waiting on the same key, so
+    the run survives its requesting client disconnecting (e.g. the UI's abort
+    timer) and the result still lands in the cache."""
+    outcome = await run_tie_set(tie_set, country=country, strategy=strategy)
+    _cache[key] = (time.time(), outcome)
+
+    # Persist the full result (every price, URL, page title) alongside the
+    # per-candidate agent traces — the cache is in-memory only.
+    outcome_file = None
     try:
-        data = json.loads(Path(seed).read_text())
-        request = {k: v for k, v in data["request"].items() if k != "client"}
-        key = json.dumps(request, sort_keys=True, default=str)
-        _cache[key] = (time.time(), data["outcome"])
-        logging.info("cache seeded from %s", seed)
-    except Exception as e:
-        logging.warning("SEED_OUTCOME failed (%r) — starting with an empty cache", e)
+        # %f (microseconds) prevents two requests finishing in the same second
+        # from overwriting each other's outcome file.
+        ts_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        path = TRACE_DIR / f"{ts_str}_outcome.json"
+        path.write_text(json.dumps({"request": request_dump, "outcome": outcome},
+                                   indent=2, default=str))
+        outcome_file = path.name
+    except Exception:
+        pass
+    return outcome, outcome_file
 
 
 @app.post("/api/find-dupes")
@@ -116,32 +151,23 @@ async def find_dupes(req: DupeRequest) -> dict:
         return hit[1]
 
     t0 = time.time()
+    task = _inflight.get(key)
+    coalesced = task is not None
+    if not coalesced:
+        task = asyncio.create_task(_price_and_cache(
+            key, req.model_dump(), [c.model_dump() for c in req.tie_set],
+            req.country, req.strategy))
+        _inflight[key] = task
+        task.add_done_callback(lambda _t: _inflight.pop(key, None))
     try:
-        outcome = await run_tie_set(
-            [c.model_dump() for c in req.tie_set],
-            country=req.country,
-            strategy=req.strategy,
-        )
+        # shield: this request being cancelled must not kill the shared run.
+        outcome, outcome_file = await asyncio.shield(task)
     except Exception as e:
-        log_usage("find_dupes", {**base, "cache_hit": False, "duration_s": round(time.time() - t0, 1), "error": repr(e)})
+        log_usage("find_dupes", {**base, "cache_hit": False, "coalesced": coalesced,
+                                 "duration_s": round(time.time() - t0, 1), "error": repr(e)})
         raise
-    _cache[key] = (time.time(), outcome)
-
-    # Persist the full result (every price, URL, page title) alongside the
-    # per-candidate agent traces — the cache is in-memory only.
-    outcome_file = None
-    try:
-        # %f (microseconds) prevents two requests finishing in the same second
-        # from overwriting each other's outcome file.
-        ts_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-        path = TRACE_DIR / f"{ts_str}_outcome.json"
-        path.write_text(json.dumps({"request": req.model_dump(), "outcome": outcome},
-                                   indent=2, default=str))
-        outcome_file = path.name
-    except Exception:
-        pass
-
-    log_usage("find_dupes", {**base, "cache_hit": False, "duration_s": round(time.time() - t0, 1),
+    log_usage("find_dupes", {**base, "cache_hit": False, "coalesced": coalesced,
+                             "duration_s": round(time.time() - t0, 1),
                              "outcome_file": outcome_file, **_outcome_summary(outcome)})
     return outcome
 

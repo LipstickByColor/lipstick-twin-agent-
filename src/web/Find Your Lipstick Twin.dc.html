@@ -187,7 +187,7 @@
           <button onClick="{{ onFindTwin }}" style="margin-top:13px;width:100%;background:#3D1B31;color:#fff;border-radius:18px;padding:18px;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 12px 28px rgba(36,16,25,.22);" style-hover="background:#4E2440;">
             Find my twin <span style="font-size:18px;">→</span>
           </button>
-          <div style="text-align:center;font-family:'Space Mono',monospace;font-size:11px;color:#6B4A3E;margin-top:10px;">our agent checks real store pages — takes a minute or two</div>
+          <div style="text-align:center;font-family:'Space Mono',monospace;font-size:11px;color:#6B4A3E;margin-top:10px;">our agent checks real store pages — takes a few minutes</div>
         </sc-if>
         <!-- example chips (when nothing staged) -->
         <sc-if value="{{ showChips }}" hint-placeholder-val="{{ true }}">
@@ -239,7 +239,7 @@
       <div style="width:100%;max-width:280px;height:7px;border-radius:7px;background:#EAD6CC;margin-top:14px;overflow:hidden;">
         <div style="height:100%;border-radius:7px;background:linear-gradient(90deg,#FF2E7E,#FF7A4D);transition:width .5s ease;width:{{ agentPctStr }};"></div>
       </div>
-      <div style="font-size:14px;color:#5C4237;margin-top:16px;max-width:310px;line-height:1.55;">Our agent runs a live Google search and reads real product pages.<br><b style="color:#241019;">This usually takes 1–2 minutes.</b></div>
+      <div style="font-size:14px;color:#5C4237;margin-top:16px;max-width:310px;line-height:1.55;">Our agent runs a live Google search and reads real product pages.<br><b style="color:#241019;">This usually takes 2–4 minutes.</b></div>
     </div>
     </sc-if>
 
@@ -495,7 +495,7 @@
           <div style="flex:1;min-width:0;padding-bottom:16px;">
             <div style="background:#fff;border:1px solid #F0DDD3;border-radius:16px;padding:14px 15px;box-shadow:0 4px 14px rgba(120,60,40,.05);">
               <div style="font-size:15px;font-weight:700;color:#241019;">🤖 An AI agent goes shopping</div>
-              <div style="font-size:13px;line-height:1.5;color:#6B4A3E;margin-top:5px;">For each twin it runs a live Google search, opens real retailer pages, and verifies the brand, shade and price on the page itself. That's why results take a minute or two.</div>
+              <div style="font-size:13px;line-height:1.5;color:#6B4A3E;margin-top:5px;">For each twin it runs a live Google search, opens real retailer pages, and verifies the brand, shade and price on the page itself. That's why results take a few minutes.</div>
             </div>
           </div>
         </div>
@@ -587,7 +587,13 @@ class Component extends DCLogic {
 
   componentDidMount() { this.loadCatalog(); }
 
-  isSame(a, b) { return a && b && a.brand === b.brand && a.shade === b.shade; }
+  // Case-insensitive: a featured chip ('Shiseido') and its catalog row
+  // ('shiseido') are the same lipstick, and the backend echoes whatever
+  // casing the tie set sent.
+  isSame(a, b) {
+    const k = s => String(s || '').toLowerCase();
+    return !!(a && b) && k(a.brand) === k(b.brand) && k(a.shade) === k(b.shade);
+  }
 
   // ΔE76 in CIELAB — ported from the color-finder app (lipstick-utils.js).
   deltaE76(l1, l2) {
@@ -644,6 +650,9 @@ class Component extends DCLogic {
       // a paid sequential agent run — revert to `>= 4` after.
       if (out.length >= 7) break;
       if (Math.round(d * 100) / 100 >= 6) break; // ranked ascending: rest are further still
+      // The anchor can reappear under a different product name or casing (chip
+      // stub vs catalog row) — pricing your own lipstick twice wastes a paid slot.
+      if (this.isSame(p, anchor)) continue;
       if (seen.has(lineKey(p))) continue;
       seen.add(lineKey(p));
       out.push({ brand: p.brand, product: p.product, shade: p.shade, delta_e: Math.round(d * 100) / 100, hex: p.hex, format: p.format });
@@ -746,9 +755,20 @@ class Component extends DCLogic {
       }));
   }
   pickBrand(name) { this.setState({ brand: name, query: '', selected: null }); }
-  choose(p) { this.setState({ selected: p, brand: p.brand, query: p.shade }); }
+  // A featured chip tapped before the catalog loads stages the hardcoded stub
+  // (Title-Case brand, possibly stale product name, no LAB). Swap in the real
+  // catalog row as soon as we have it so the anchor matches the agent's
+  // candidates exactly. Catalog rows (they carry `lab`) pass through untouched.
+  resolveCatalogRow(p) { return (p && !p.lab && this.findInCatalog(p.brand, p.shade)) || p; }
+  choose(p) {
+    p = this.resolveCatalogRow(p);
+    this.setState({ selected: p, brand: p.brand, query: p.shade });
+  }
 
   pick(p) {
+    // Re-resolve at run time too: the catalog may have finished loading only
+    // after the chip was staged.
+    p = this.resolveCatalogRow(p);
     this.clearTimers();
     this.setState({ screen: 'agent', anchor: p, agentStep: 0, outcome: null, error: null, downloaded: false });
     // The step animation paces itself against a real 1–3 minute agent run:
@@ -761,10 +781,12 @@ class Component extends DCLogic {
     const run = this._run = (this._run || 0) + 1;
     const t0 = this._waitT0 = Date.now();
     const waited = () => Math.round((Date.now() - t0) / 100) / 10;   // seconds, 0.1s precision
-    // A run should never exceed ~3 min; abort at 4 so a lost connection can't
-    // strand the agent screen forever (fetch has no timeout of its own).
+    // Live runs have been observed up to ~4.6 min; abort at 6 so a lost
+    // connection can't strand the agent screen forever (fetch has no timeout
+    // of its own). Keep this ABOVE the server's real worst case — an abort
+    // 20s before the server finishes reads as a snag and double-pays on retry.
     const ctrl = new AbortController();
-    const killT = setTimeout(() => ctrl.abort(), 240000);
+    const killT = setTimeout(() => ctrl.abort(), 360000);
     fetch('/api/find-dupes', {
       method: 'POST',
       signal: ctrl.signal,
